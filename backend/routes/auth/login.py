@@ -26,12 +26,12 @@ import secrets
 
 from flask import request, jsonify
 from . import auth_bp  # your blueprint
-from modules.auth.login_module import perform_login  # import function from your module
-from utils.limiter import limiter
+from ...modules.auth.login_module import perform_login  # import function from your module
+from ...utils.limiter import limiter
 
 @auth_bp.route("/login", methods=["POST"])
 @limiter.limit("4 per minute")  # still light protection
 def login():
     data = request.json
     response = perform_login(data)  # call module function that handles DB + JWT
-    return jsonify(response)
+    return response

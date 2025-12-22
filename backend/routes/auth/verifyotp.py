@@ -23,13 +23,13 @@ import hashlib
 import secrets
 
 from . import auth_bp  # your blueprint
-from modules.auth.verifyotp_module import perform_verify_otp  # import function from your module        
-from utils.limiter import limiter
+from ...modules.auth.verifyotp_module import perform_verify_otp  # import function from your module        
+from ...utils.limiter import limiter
 
 
 @auth_bp.route("/verify-otp", methods=["POST"])
 @limiter.limit("4 per minute")  # still light protection
-def perform_verify_otp():
+def verify_otp():
     data = request.get_json()
     response = perform_verify_otp(data)  # call module function that handles DB + JWT
-    return jsonify(response)
+    return response

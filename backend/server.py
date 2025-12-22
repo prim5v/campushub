@@ -1,34 +1,43 @@
-# imports
-import bcrypt
-from flask import Blueprint, Flask, jsonify, g, request, current_app
-import pymysql
-import uuid, random, string, re
-from flask_cors import CORS
-import requests
-from functools import wraps
-import jwt
-from google import genai  # ✅ correct for google-genai>=1.0.0
-from datetime import datetime, date, timedelta
-from requests.auth import HTTPBasicAuth
-# from flask import current_app
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-import logging
-from flask_mail import Mail, Message
-from decimal import Decimal
-from twilio.rest import Client
-from google import genai  # ✅ correct for google-genai>=1.0.0
-from flask import make_response
-import user_agents
-import hashlib
-import secrets
+# backend/server.py
 
-# from flask_mail import Message
-# from app import mail  # Ensure 'mail' is imported from where you initialized it
-# python3.10 -m pip install flask flask-cors pymysql bcrypt requests PyJWT
+import os
+import logging
+from dotenv import load_dotenv
+
+from flask import Flask, jsonify
+from flask_cors import CORS
+
+from backend.utils.limiter import limiter
+from backend.utils.email_setup import mail
+
+from flask_mail import Mail, Message
+
+
+load_dotenv()
 
 # ================= FLASK APP SETUP =================
 app = Flask(__name__)
+
+# === EMAIL CONFIG ===
+app.config["MAIL_SERVER"] = os.getenv("MAIL_SERVER")
+app.config["MAIL_PORT"] = int(os.getenv("MAIL_PORT", 587))
+app.config["MAIL_USE_TLS"] = os.getenv("MAIL_USE_TLS", "true").lower() in ("true", "1", "yes")
+app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")
+app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
+app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_DEFAULT_SENDER")
+
+# print("MAIL_SERVER =", os.getenv("MAIL_SERVER"))
+# print("MAIL_PORT =", os.getenv("MAIL_PORT"))
+# import socket
+# print(socket.gethostbyname("smtp.gmail.com"))
+
+
+mail.init_app(app)
+
+
+app.config["SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
+app.config["UPLOAD_FOLDER"] = "/home/backendagripool4293/mysite/static/images"
+
 CORS(
     app,
     supports_credentials=True,
@@ -38,31 +47,57 @@ CORS(
     ]
 )
 
-app.config['UPLOAD_FOLDER'] = '/home/backendagripool4293/mysite/static/images'
 
-# server.py
-from routes.auth import auth_bp
+
+
+# ================= EXTENSIONS =================
+limiter.init_app(app)
+
+# ================= ERROR HANDLERS =================
+@app.errorhandler(429)
+def ratelimit_error(e):
+    return jsonify({
+        "error": "Too many requests — slow down.",
+        "details": str(e.description)
+    }), 429
+
+# ================= BLUEPRINTS =================
+from backend.routes.auth import auth_bp
+from backend.routes.admin import admin
+
 app.register_blueprint(auth_bp)
+app.register_blueprint(admin)
+
+# ================= LOGGING =================
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
+logging.info("Starting the Flask application...")
+logging.info("Flask application started successfully.")
+
+# test routes
+@app.route("/")
+def index():
+    return "Am Backend and am up and running"
+
+@app.route("/test-email")
+def test_email():
+    msg = Message(
+        subject="Flask Mail Test",
+        recipients=["your_other_email@gmail.com"],
+        body="If you received this, Flask-Mail is working correctly!"
+    )
+    mail.send(msg)
+    return "✅ Test email sent successfully!"
 
 
-
-# Configure structured logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# ================= RUN =================
+if __name__ == "__main__":
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=os.getenv("FLASK_DEBUG") == "1"
+    )
 
 

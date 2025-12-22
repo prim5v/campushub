@@ -24,9 +24,10 @@ import hashlib
 import secrets
 
 
-from utils.db_connection import get_db
+from ...utils.db_connection import get_db
 
 def check_profile(current_user_id, role):
+
     print("[DEBUG] /profile route called")
     print(f"[DEBUG] Current User ID from token: {current_user_id}, Role from token: {role}")
 
@@ -46,7 +47,7 @@ def check_profile(current_user_id, role):
                 print("[DEBUG] User not found — returning default student role")
                 # Return a default student role instead of 404
                 return jsonify({
-                    "message": "Access granted",
+                    "message": "Access granted", 
                     "user": {
                         "id": current_user_id,
                         "email": "unknown@student.com",

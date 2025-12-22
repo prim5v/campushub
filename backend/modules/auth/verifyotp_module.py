@@ -23,13 +23,13 @@ import hashlib
 import secrets
 
 
-from utils.db_connection import get_db
-from utils.jwt_setup import generate_jwt
-from utils.extra_functions import get_device_info
+from ...utils.db_connection import get_db
+from ...utils.jwt_setup import generate_jwt
+from ...utils.extra_functions import get_device_info
 import bcrypt, uuid
 from datetime import datetime, timedelta
 
-
+from ...utils.email_setup import mail
 
 
 def generate_otp():
@@ -48,7 +48,7 @@ def perform_verify_otp(data):
 
             # Fetch latest OTP record
             cursor.execute("""
-                SELECT * FROM EmailOTP
+                SELECT * FROM email_otp
                 WHERE email = %s
                 ORDER BY created_at DESC
                 LIMIT 1
@@ -67,10 +67,10 @@ def perform_verify_otp(data):
                 return jsonify({"error": "OTP has expired"}), 400
 
             # Validate OTP
-            if record["otp"] != otp:
+            if record["otp_code"] != otp:
                 # Increment attempt count
                 cursor.execute("""
-                    UPDATE EmailOTP SET attempts = attempts + 1
+                    UPDATE email_otp SET attempts = attempts + 1
                     WHERE email = %s
                 """, (email,))
                 conn.commit()
@@ -82,12 +82,12 @@ def perform_verify_otp(data):
                 }), 400
 
             # ✅ OTP correct: create user
-            role_prefixes = {"admin": "adm", "student": "stu"}
+            role_prefixes = {"landlord": "lnrd", "comrade": "cd"}
             prefix = role_prefixes.get(record["role"], "usr")
-            user_id = f"{prefix}-{str(uuid.uuid4())[:8]}"
+            user_id = f"{prefix}-{str(uuid.uuid4())[:16].upper()}"
 
             cursor.execute("""
-                INSERT INTO Users (user_id, username, email, password, role)
+                INSERT INTO users (user_id, username, email, password_hash, role)
                 VALUES (%s, %s, %s, %s, %s)
             """, (
                 user_id,
@@ -99,8 +99,38 @@ def perform_verify_otp(data):
             conn.commit()
 
             # Delete OTP record
-            cursor.execute("""DELETE FROM EmailOTP WHERE email = %s""", (email,))
+            cursor.execute("""DELETE FROM email_otp WHERE email = %s""", (email,))
             conn.commit()
+
+                        # After user creation and OTP deletion
+            # ======================== SEND ROLE-BASED QUESTIONNAIRE ========================
+            role_forms = {
+                "landlord": "https://docs.google.com/forms/d/LANDLORD_FORM_LINK",
+                "comrade": "https://docs.google.com/forms/d/COMRADE_FORM_LINK"
+            }
+
+            form_link = role_forms.get(record["role"])
+            if form_link:
+                try:
+                    subject = "📋 Please complete your verification questionnaire"
+                    body = f"""
+                    Hello {record['username']},
+
+                    Thank you for signing up as a {record['role']}. 
+                    To complete your registration, please fill out this questionnaire:
+
+                    {form_link}
+
+                    Regards,
+                    CampusHub Team
+                    """
+                    msg = Message(subject, recipients=[record["email"]], body=body)
+                    mail.send(msg)
+                    print(f"✅ Questionnaire email sent to {record['email']} for role {record['role']}")
+                except Exception as e:
+                    print(f"❌ Failed to send questionnaire email: {e}")
+            # ============================================================================
+
 
             # ✅ Create session immediately
             device_id = request.cookies.get("device_id")
@@ -115,7 +145,7 @@ def perform_verify_otp(data):
 
             cursor.execute("""
                 INSERT INTO sessions (
-                    session_id, user_id, token, expires_at, device_id, browser, os, ip_address, location
+                    session_id, user_id, token_hash, expires_at, device_id, browser, os, ip_address, location_address
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 session_id,
@@ -130,6 +160,18 @@ def perform_verify_otp(data):
             ))
             conn.commit()
 
+            # insert user_id in security_checks table 
+            cursor.execute("""
+                INSERT INTO security_checks (user_id)
+                VALUES (%s)
+            """, (user_id,))
+            conn.commit()
+
+                    # get user status
+            cursor.execute("SELECT status FROM security_checks WHERE user_id=%s", (user_id,))
+            status = cursor.fetchone()["status"]
+
+
             # ✅ Prepare response with cookie
             resp = make_response(jsonify({
                 "status": "success",
@@ -138,7 +180,8 @@ def perform_verify_otp(data):
                     "user_id": user_id,
                     "username": record["username"],
                     "role": record["role"],
-                    "email": record["email"]
+                    "email": record["email"],
+                    "status": status
                 },
             }))
             resp.set_cookie(
@@ -147,7 +190,7 @@ def perform_verify_otp(data):
                 max_age=365*24*60*60,  # 1 year
                 httponly=True,
                 secure=True,  # set to False if testing on HTTP
-                samesite="None"  # allow cross-site sending,
+                samesite="None",  # allow cross-site sending,
                 path="/"
             )
 

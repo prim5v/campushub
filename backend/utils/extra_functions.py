@@ -23,7 +23,7 @@ import user_agents
 import hashlib
 import secrets
 
-
+from .email_setup import mail
 
 def get_location(ip: str) -> str:
     """Resolve IP to city, region, country using ipinfo.io"""
@@ -40,8 +40,10 @@ def get_location(ip: str) -> str:
     return "Unknown"
 
 
+
 def get_device_info() -> dict:
     ua_string = request.headers.get("User-Agent", "Unknown")
+    device_brand_info = get_device_brand(ua_string)
     user_agent = user_agents.parse(ua_string)
     ip = request.headers.get("X-Forwarded-For", request.remote_addr)
 
@@ -103,9 +105,13 @@ def get_device_info() -> dict:
         "browser": browser_family,
         "os": os_family,
         "device": device_family,
+        "device_brand": device_brand_info["brand"],
+        "device_model": device_brand_info["model"],
         "ip": ip,
         "location": location
     }
+
+
 
 
 # from utils.email_utils import send_security_email
@@ -126,6 +132,9 @@ def send_security_email(email, device_info, reasons):
     📱 **Login Details:**
     • Browser: {device_info['browser']}
     • Operating System: {device_info['os']}
+    • Device: {device_info['device']}
+    • Device Brand: {device_info['device_brand']}
+    • Device Model: {device_info['device_model']}
     • IP Address: {device_info['ip']}
     • Location: {device_info['location']}
 
@@ -147,6 +156,9 @@ def send_security_email(email, device_info, reasons):
 
 
 
+def generate_otp():
+    return str(random.randint(100000, 999999))
+
 def send_informational_email(email, device_info, reasons):
     subject = "ℹ️ Login Notice: New Device or Browser Detected"
 
@@ -164,6 +176,9 @@ def send_informational_email(email, device_info, reasons):
     📱 **Login Details:**
     • Browser: {device_info['browser']}
     • Operating System: {device_info['os']}
+    • Device: {device_info['device']}
+    • Device Brand: {device_info['device_brand']}
+    • Device Model: {device_info['device_model']}
     • IP Address: {device_info['ip']}
     • Location: {device_info['location']}
 
@@ -183,3 +198,51 @@ def send_informational_email(email, device_info, reasons):
     except Exception as e:
         print(f"❌ Failed to send email: {e}")
         return False
+
+
+def get_device_brand(ua_string: str) -> dict:
+    ua = ua_string.lower()
+
+    # --- Mobile brands ---
+    if "iphone" in ua:
+        return {"brand": "Apple", "model": "iPhone"}
+    if "ipad" in ua:
+        return {"brand": "Apple", "model": "iPad"}
+    if "samsung" in ua:
+        return {"brand": "Samsung", "model": "Android"}
+    if "tecno" in ua:
+        return {"brand": "Tecno", "model": "Android"}
+    if "infinix" in ua:
+        return {"brand": "Infinix", "model": "Android"}
+    if "itel" in ua:
+        return {"brand": "Itel", "model": "Android"}
+    if "redmi" in ua or "xiaomi" in ua:
+        return {"brand": "Xiaomi", "model": "Android"}
+    if "huawei" in ua:
+        return {"brand": "Huawei", "model": "Android"}
+    if "oppo" in ua:
+        return {"brand": "Oppo", "model": "Android"}
+    if "vivo" in ua:
+        return {"brand": "Vivo", "model": "Android"}
+
+    # --- Laptops / PCs ---
+    if "dell" in ua:
+        return {"brand": "Dell", "model": "PC"}
+    if "asus" in ua:
+        return {"brand": "ASUS", "model": "PC"}
+    if "hp" in ua or "hewlett-packard" in ua:
+        return {"brand": "HP", "model": "PC"}
+    if "lenovo" in ua:
+        return {"brand": "Lenovo", "model": "PC"}
+    if "acer" in ua:
+        return {"brand": "Acer", "model": "PC"}
+    if "macintosh" in ua or "mac os" in ua:
+        return {"brand": "Apple", "model": "Mac"}
+
+    # --- API Clients ---
+    if "postman" in ua:
+        return {"brand": "Postman", "model": "API Client"}
+    if "insomnia" in ua:
+        return {"brand": "Insomnia", "model": "API Client"}
+
+    return {"brand": "Unknown", "model": "Unknown"}
