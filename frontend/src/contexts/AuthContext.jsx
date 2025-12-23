@@ -210,6 +210,19 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("pending_email");
   };
 
+  // logout on token expiration 
+  useEffect(() => {
+  const handleLogout = () => {
+    console.warn("[Auth] Session expired — logging out");
+    logout();
+  };
+
+  window.addEventListener("auth:logout", handleLogout);
+  return () => window.removeEventListener("auth:logout", handleLogout);
+}, []);
+
+
+
   /* =========================
      CONTEXT VALUE
   ========================= */

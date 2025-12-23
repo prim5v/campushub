@@ -212,11 +212,12 @@ Create table if not exists Mpesa_sessions (
     user_id VARCHAR(50) REFERENCES users(user_id) ON DELETE CASCADE,
     checkout_request_id VARCHAR(255) NOT NULL,
     mpesa_code VARCHAR(50),
-    order_id VARCHAR(100) NOT NULL,
+    order_id VARCHAR(100) NULL,
+    booking_id VARCHAR(100) NULL,
     phone VARCHAR(15) NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
     initiated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    product_data JSONB,
+    product_data JSON,
     status VARCHAR(20) enum ('initiated', 'completed', 'failed') NOT NULL
 );
 
@@ -258,3 +259,11 @@ Create table if not exists e_earnings(
     source VARCHAR(100) NOT NULL
 );
 
+Create table if not exists bookings(
+    id SERIAL PRIMARY KEY,
+    booking_id VARCHAR(50) UNIQUE NOT NULL,
+    listing_id VARCHAR(50) REFERENCES listings_data(listing_id) ON DELETE CASCADE,
+    user_id VARCHAR(50) REFERENCES users(user_id) ON DELETE CASCADE,
+    booked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status enum ('pending', 'confirmed', 'cancelled') NOT NULL
+)

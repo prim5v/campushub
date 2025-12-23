@@ -15,6 +15,13 @@ const defaultHeaders = {
 };
 
 const handleResponse = async (res) => {
+
+  if (res.status === 401) {
+    // session expired or invalid
+    window.dispatchEvent(new Event("auth:logout"));
+    throw new Error("Session expired");
+  }
+
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const error = data?.error || `HTTP ${res.status}`;
