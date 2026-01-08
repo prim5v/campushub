@@ -24,17 +24,16 @@ import hashlib
 import secrets
 
 
-from . import admin  # your blueprint
+from . import landlord  # your blueprint
 from ...utils.limiter import limiter
-from ...modules.admin.get_unverified_users_module import fetch_unverified_users
+from ...modules.landlord.delete_listing_module import remove_listing
 from ...utils.jwt_setup import token_required, require_role
 
 
-
-@admin.route("/get_unverified_users", methods=["GET"])
+@landlord.route("/delete_listing/<listing_id>", methods=["DELETE"])
 @token_required
-@require_role("admin")
+@require_role("landlord")
 @limiter.limit("10 per minute")  # moderate protection
-def fetch_all_users():
-    response = fetch_unverified_users()  # call module function that handles DB
+def delete_listing(current_user_id, role, listing_id):
+    response = remove_listing(current_user_id, role, listing_id)  # call module function that handles DB
     return response

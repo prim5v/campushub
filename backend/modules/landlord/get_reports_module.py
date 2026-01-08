@@ -24,17 +24,24 @@ import hashlib
 import secrets
 
 
-from . import admin  # your blueprint
-from ...utils.limiter import limiter
-from ...modules.admin.get_unverified_users_module import fetch_unverified_users
-from ...utils.jwt_setup import token_required, require_role
+from ...utils.db_connection import get_db
 
+def fetch_reports(current_user_id, role):
+    db = get_db()
+    cursor = db.cursor()
 
+    try:
+        # 1️⃣ Fetch reports
+        fetch_reports_sql = """
+            SELECT *
+            FROM reports
+            WHERE user_id = %s
+        """
+        cursor.execute(fetch_reports_sql, (current_user_id,))
+        reports = cursor.fetchall()
 
-@admin.route("/get_unverified_users", methods=["GET"])
-@token_required
-@require_role("admin")
-@limiter.limit("10 per minute")  # moderate protection
-def fetch_all_users():
-    response = fetch_unverified_users()  # call module function that handles DB
-    return response
+        return jsonify({"reports": reports}), 200
+
+    except Exception as e:
+        print(f"[ERROR] Exception occurred: {e}")
+        return jsonify({"error": "Internal server error"}), 500

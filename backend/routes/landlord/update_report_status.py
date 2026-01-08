@@ -24,17 +24,16 @@ import hashlib
 import secrets
 
 
-from . import admin  # your blueprint
+from . import landlord  # your blueprint
 from ...utils.limiter import limiter
-from ...modules.admin.get_unverified_users_module import fetch_unverified_users
+from ...modules.landlord.update_report_status_module import change_report_status
 from ...utils.jwt_setup import token_required, require_role
 
 
-
-@admin.route("/get_unverified_users", methods=["GET"])
+@landlord.route("/update_report_status", methods=["POST"])
 @token_required
-@require_role("admin")
+@require_role("landlord")
 @limiter.limit("10 per minute")  # moderate protection
-def fetch_all_users():
-    response = fetch_unverified_users()  # call module function that handles DB
+def update_report_status(current_user_id, role):
+    response = change_report_status(current_user_id, role,)  # call module function that handles DB
     return response

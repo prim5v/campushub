@@ -1,4 +1,3 @@
-# imports
 import bcrypt
 from flask import Blueprint, Flask, jsonify, g, request, current_app
 import pymysql
@@ -24,17 +23,26 @@ import hashlib
 import secrets
 
 
-from . import admin  # your blueprint
-from ...utils.limiter import limiter
-from ...modules.admin.get_unverified_users_module import fetch_unverified_users
-from ...utils.jwt_setup import token_required, require_role
+from ...utils.db_connection import get_db
 
+def remove_property(current_user_id, role, property_id):
+    db = get_db()
+    cursor = db.cursor()
 
+    try:
+        deletesql = "DELETE FROM properties WHERE property_id = %s AND user_id = %s"
+        data = (property_id, current_user_id)
+        cursor.execute(deletesql, data)
 
-@admin.route("/get_unverified_users", methods=["GET"])
-@token_required
-@require_role("admin")
-@limiter.limit("10 per minute")  # moderate protection
-def fetch_all_users():
-    response = fetch_unverified_users()  # call module function that handles DB
-    return response
+        deleteimagesql = "DELETE FROM images WHERE property_id = %s AND user_id = %s"
+        cursor.execute(deleteimagesql, (property_id, current_user_id))
+        
+        return jsonify(
+            {
+                "status" : "success" 
+            }
+        )
+    
+    except Exception as e:
+        print(f"[ERROR] Exception occurred: {e}")
+        return jsonify({"error": str(e)}), 500

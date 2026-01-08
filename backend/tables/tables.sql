@@ -51,7 +51,11 @@ CREATE TABLE IF NOT EXISTS security_checks (
 Create table if not exists images (
     id SERIAL PRIMARY KEY,
     user_id VARCHAR(50) NULL,
-    sales_id VARCHAR(50) NULL,
+    tenant_id VARCHAR(50) NULL,
+    listing_id VARCHAR(50) NULL,
+    property_id VARCHAR(50) NULL,
+    product_id VARCHAR(50) NULL,
+    service_id VARCHAR(50) NULL,
     image_url VARCHAR(255) NOT NULL,
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -81,15 +85,31 @@ CREATE TABLE IF NOT EXISTS email_otp (
 Create table if not exists listings_data (
     id SERIAL PRIMARY KEY,
     listing_id VARCHAR(50) UNIQUE NOT NULL,
+    property_id VARCHAR(50) REFERENCES properties_data(property_id) ON DELETE CASCADE,
     user_id VARCHAR(50) REFERENCES users(user_id) ON DELETE CASCADE,
     listing_name VARCHAR(100) NOT NULL,
     listing_description TEXT NOT NULL,
-    listing_type enum ('apartment', 'bedsitter'),
+    listing_type enum ('apartment', 'bedsitter', 'hostel'),
     price DECIMAL(10,2) NOT NULL,
+    renting_price DECIMAL(10,2) NULL,
     timeline enum ('daily', 'weekly', 'monthly') NOT NULL,
     availability_status enum ('available', 'rented') NOT NULL,
+    availability_date TIMESTAMP,
     listed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+
+Create table if not exists properties_data (
+    id SERIAL PRIMARY KEY,
+    property_id VARCHAR(50) UNIQUE NOT NULL,
+    user_id VARCHAR(50) REFERENCES users(user_id) ON DELETE CASCADE,
+    property_name VARCHAR(100) NOT NULL,
+    property_description TEXT NOT NULL,
+    property_type enum ('house', 'apartment', 'condo', 'townhouse', 'hostel', 'bedsitter'),
+    listed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
+
 
 create table if not exists reviews(
     id SERIAL PRIMARY KEY,
@@ -104,6 +124,7 @@ create table if not exists reviews(
 Create table if not exists Location_data (
     id SERIAL PRIMARY KEY,
     user_id VARCHAR(50) REFERENCES users(user_id) ON DELETE CASCADE,
+    property_id VARCHAR(50) NULL,
     listing_id VARCHAR(50) NULL,
     latitude DECIMAL(9,6) NOT NULL,
     longitude DECIMAL(9,6) NOT NULL,
@@ -197,12 +218,16 @@ Create table if not exists transactions (
     id SERIAL PRIMARY KEY,
     transaction_id VARCHAR(50) UNIQUE NOT NULL,
     user_id VARCHAR(50) REFERENCES users(user_id) ON DELETE CASCADE,
+    paid_by JSON,
+    paid_to JSON,
     title VARCHAR(100) NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    transaction_type enum ('income', 'expense') NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
     payment_method VARCHAR(50) NOT NULL,
-    mpesa_code VARCHAR(50),
+    mpesa_code VARCHAR(50) NULL,
     transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) enum ('pending', 'completed', 'failed') NOT NULL
+    status enum ('pending', 'completed', 'failed', 'partial') NOT NULL
 );
 
 
@@ -267,3 +292,49 @@ Create table if not exists bookings(
     booked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status enum ('pending', 'confirmed', 'cancelled') NOT NULL
 )
+
+Create table if not exists tenants_data(
+    id SERIAL PRIMARY KEY,
+    tenant_id VARCHAR(50) UNIQUE NOT NULL,
+    tenant_name VARCHAR(100) UNIQUE NOT NULL,
+    tenant_email VARCHAR(100) UNIQUE NOT NULL,
+    tenant_phone VARCHAR(50) UNIQUE NOT NULL,
+    user_id VARCHAR(50) REFERENCES users(user_id) ON DELETE CASCADE,
+    listing_id VARCHAR(50) REFERENCES listings_data(listing_id) ON DELETE CASCADE,
+    lease_start_date TIMESTAMP NOT NULL,
+    lease_end_date TIMESTAMP NOT NULL,
+    rent_amount DECIMAL(10,2) NOT NULL,
+    payment_schedule enum ('monthly', 'quarterly', 'yearly') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
+Create table if not exists rent_payments(
+    id SERIAL PRIMARY KEY,
+    payment_id VARCHAR(50) UNIQUE NOT NULL,
+    tenant_id VARCHAR(50) REFERENCES Tenants_data(tenant_id) ON DELETE CASCADE,
+    amount DECIMAL(10,2) NOT NULL,
+    payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    payment_method VARCHAR(50) NOT NULL,
+    status enum ('pending', 'completed', 'failed') NOT NULL
+);
+
+Create table if not exists tenant_deposits(
+    id SERIAL PRIMARY KEY,
+    deposit_id VARCHAR(50) UNIQUE NOT NULL,
+    tenant_id VARCHAR(50) REFERENCES Tenants_data(tenant_id) ON DELETE CASCADE,
+    amount DECIMAL(10,2) NOT NULL,
+    deposit_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status enum ('held', 'refunded', 'forfeited') NOT NULL
+);
+
+Creaate table if not exists reports(
+    id SERIAL PRIMARY KEY,
+    report_id VARCHAR(50) UNIQUE NOT NULL,
+    tenant_id VARCHAR(50) REFERENCES tenants_data(tenant_id) ON DELETE CASCADE,
+    property_id VARCHAR(50) REFERENCES properties_data(property_id) ON DELETE
+    user_id VARCHAR(50) REFERENCES users(user_id) ON DELETE CASCADE,
+    report_type VARCHAR(100) NOT NULL,
+    report_data JSON NOT NULL,
+    report_status enum ('open', 'in_progress', 'resolved', 'closed') NOT NULL,
+    generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

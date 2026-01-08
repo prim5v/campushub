@@ -36,7 +36,7 @@ mail.init_app(app)
 
 
 app.config["SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
-app.config["UPLOAD_FOLDER"] = "/home/backendagripool4293/mysite/static/images"
+app.config["UPLOAD_FOLDER"] = "/home/backendagripool4293/backend/static/images"
 
 CORS(
     app,
@@ -64,9 +64,11 @@ def ratelimit_error(e):
 # ================= BLUEPRINTS =================
 from backend.routes.auth import auth_bp
 from backend.routes.admin import admin
+from backend.routes.landlord import landlord
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(admin)
+app.register_blueprint(landlord)
 
 # ================= LOGGING =================
 logging.basicConfig(

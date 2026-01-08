@@ -21,8 +21,8 @@ from .audit import log_audit
 def generate_jwt(user_id, role, device_id, session_id):
     # Set expiry based on role
     if role == "admin":
-        expiry = datetime.utcnow() + timedelta(hours=2)
-    elif role == "student":
+        expiry = datetime.utcnow() + timedelta(minutes=1)
+    elif role == "comrade":
         expiry = datetime.utcnow() + timedelta(hours=8)
     else:
         expiry = datetime.utcnow() + timedelta(hours=5)
