@@ -21,17 +21,17 @@ from google import genai  # ✅ correct for google-genai>=1.0.0
 from flask import make_response
 import user_agents
 import hashlib
-import secrets
 
 
-from flask import request, jsonify
-from . import auth_bp  # your blueprint
-from ...modules.auth.login_module import perform_login  # import function from your module
+from . import comrade
 from ...utils.limiter import limiter
+from ...modules.comrade.get_e_service_module import fetch_e_service
+from ...utils.jwt_setup import token_required, require_role
 
-@auth_bp.route("/login", methods=["POST"])
-@limiter.limit("4 per minute")  # still light protection
-def login():
-    data = request.json or request.form
-    response = perform_login(data)  # call module function that handles DB + JWT
+@comrade.route("/get_e_service", methods=['GET'])
+@token_required
+@require_role("comrade")
+@limiter.limit("10 per minute")
+def get_e_service(current_user_id, role):
+    response = fetch_e_service(current_user_id, role)  # call module function that handles DB
     return response

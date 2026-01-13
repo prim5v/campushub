@@ -32,6 +32,6 @@ from ...utils.limiter import limiter
 @auth_bp.route("/signup", methods=["POST"])
 @limiter.limit("4 per minute")  # still light protection
 def signup():
-    data = request.json
+    data = request.json or request.form
     response = perform_signup(data)  # call module function that handles DB + JWT
     return response

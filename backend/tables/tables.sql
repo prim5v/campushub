@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     phone VARCHAR(50) UNIQUE NULL,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('admin', 'comrade', 'landlord', 'e_service') NOT NULL,
+    plan VARCHAR(50) NULL DEFAULT 'free',
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -89,6 +90,7 @@ Create table if not exists listings_data (
     user_id VARCHAR(50) REFERENCES users(user_id) ON DELETE CASCADE,
     listing_name VARCHAR(100) NOT NULL,
     listing_description TEXT NOT NULL,
+    deposits JSON,
     listing_type enum ('apartment', 'bedsitter', 'hostel'),
     price DECIMAL(10,2) NOT NULL,
     renting_price DECIMAL(10,2) NULL,
@@ -103,6 +105,8 @@ Create table if not exists properties_data (
     id SERIAL PRIMARY KEY,
     property_id VARCHAR(50) UNIQUE NOT NULL,
     user_id VARCHAR(50) REFERENCES users(user_id) ON DELETE CASCADE,
+    amenities JSON,
+    verified BOOLEAN DEFAULT FALSE,
     property_name VARCHAR(100) NOT NULL,
     property_description TEXT NOT NULL,
     property_type enum ('house', 'apartment', 'condo', 'townhouse', 'hostel', 'bedsitter'),
@@ -337,4 +341,34 @@ Creaate table if not exists reports(
     report_data JSON NOT NULL,
     report_status enum ('open', 'in_progress', 'resolved', 'closed') NOT NULL,
     generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE plan_data (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    price INT NOT NULL,
+    period VARCHAR(20) NOT NULL,
+    description TEXT,
+    features JSON NOT NULL,
+    not_included JSON NOT NULL,
+    popular BOOLEAN DEFAULT FALSE,
+    properties_limit INT DEFAULT 1,
+    listings_limit INT DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE pending_landlord_signups (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    username VARCHAR(100) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL,
+    plan_id INT NOT NULL,
+    checkout_request_id VARCHAR(100) NOT NULL,
+    status ENUM('pending_payment','paid','failed') DEFAULT 'pending_payment',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uniq_checkout (checkout_request_id),
+    UNIQUE KEY uniq_email (email)
 );

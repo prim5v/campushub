@@ -23,15 +23,15 @@ import user_agents
 import hashlib
 import secrets
 
-
-from flask import request, jsonify
-from . import auth_bp  # your blueprint
-from ...modules.auth.login_module import perform_login  # import function from your module
+from . import landlord  # your blueprint
 from ...utils.limiter import limiter
+from ...modules.landlord.get_plans_module import get_plans
+from ...utils.jwt_setup import token_required, require_role
 
-@auth_bp.route("/login", methods=["POST"])
-@limiter.limit("4 per minute")  # still light protection
-def login():
-    data = request.json or request.form
-    response = perform_login(data)  # call module function that handles DB + JWT
+@landlord.route("/get_plans", methods=["GET"])
+# @token_required
+# @require_role("landlord")
+@limiter.limit("10 per minute")  # moderate protection
+def get_plans_route():
+    response = get_plans()  # call module function that handles DB
     return response

@@ -34,6 +34,7 @@ def fetch_overview(current_user_id, role):
             SELECT 
                 (SELECT COUNT(*) FROM tenants_data WHERE user_id = %s) AS total_tenants,
                 (SELECT COUNT(*) FROM properties_data WHERE user_id = %s) AS total_properties,
+                (SELECT COUNT(*) FROM listings_data WHERE user_id = %s) AS total_listings,
                 (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE user_id = %s AND type = 'income') AS total_income,
                 (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE user_id = %s AND type = 'expense') AS total_expenses
         """
@@ -41,6 +42,7 @@ def fetch_overview(current_user_id, role):
         cursor.execute(
             overview_sql,
             (
+                current_user_id,
                 current_user_id,
                 current_user_id,
                 current_user_id,
@@ -54,8 +56,9 @@ def fetch_overview(current_user_id, role):
         overview_data = {
             "total_tenants": result[0],
             "total_properties": result[1],
-            "total_income": float(result[2]),
-            "total_expenses": float(result[3]),
+            "total_listings": result[2],
+            "total_income": float(result[3]),
+            "total_expenses": float(result[4]),
             "total amount" : total_amount
         }
 

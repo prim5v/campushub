@@ -65,10 +65,15 @@ def ratelimit_error(e):
 from backend.routes.auth import auth_bp
 from backend.routes.admin import admin
 from backend.routes.landlord import landlord
+from backend.routes.comrade import comrade
+from backend .routes.mpesaPaymentGetways import mpesaPaymentGetways
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(admin)
 app.register_blueprint(landlord)
+app.register_blueprint(comrade)
+app.register_blueprint(mpesaPaymentGetways)
+
 
 # ================= LOGGING =================
 logging.basicConfig(
@@ -99,7 +104,11 @@ if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
         port=5000,
-        debug=os.getenv("FLASK_DEBUG") == "1"
+        debug=os.getenv("FLASK_DEBUG") == "1",
+        ssl_context = (
+            "./192.168.100.2+1.pem",
+            "./192.168.100.2+1-key.pem" 
+        )
     )
 
 

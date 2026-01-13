@@ -21,17 +21,18 @@ from google import genai  # ✅ correct for google-genai>=1.0.0
 from flask import make_response
 import user_agents
 import hashlib
-import secrets
 
 
-from flask import request, jsonify
-from . import auth_bp  # your blueprint
-from ...modules.auth.login_module import perform_login  # import function from your module
+from . import mpesaPaymentGetways
 from ...utils.limiter import limiter
+from ...modules.mpesaPaymentGetways.landlord_mpesa_signup_module import perform_landlord_mpesa_signup
+from ...utils.jwt_setup import token_required, require_role
 
-@auth_bp.route("/login", methods=["POST"])
-@limiter.limit("4 per minute")  # still light protection
-def login():
+@mpesaPaymentGetways.route("/landlord_mpesa_signup", methods=['POST'])
+# @token_required
+# @require_role("landlord")
+@limiter.limit("5 per minute")
+def landlord_mpesa_signup():
     data = request.json or request.form
-    response = perform_login(data)  # call module function that handles DB + JWT
+    response = perform_landlord_mpesa_signup(data)  # call module function that handles DB
     return response
