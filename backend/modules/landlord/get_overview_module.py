@@ -25,11 +25,18 @@ import secrets
 
 
 from ...utils.db_connection import get_db
+import logging
 
 def fetch_overview(current_user_id, role):
-    db = get_db()
-    cursor = db.cursor()
+    logging.info(f"[OVERVIEW] Fetching overview for user_id={current_user_id}, role={role}")
+
     try:
+        db = get_db()
+        logging.info("[OVERVIEW] Database connection acquired")
+
+        cursor = db.cursor()
+        logging.info("[OVERVIEW] Cursor created")
+
         overview_sql = """
             SELECT 
                 (SELECT COUNT(*) FROM tenants_data WHERE user_id = %s) AS total_tenants,
@@ -39,19 +46,27 @@ def fetch_overview(current_user_id, role):
                 (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE user_id = %s AND type = 'expense') AS total_expenses
         """
 
-        cursor.execute(
-            overview_sql,
-            (
-                current_user_id,
-                current_user_id,
-                current_user_id,
-                current_user_id,
-                current_user_id
-            )
+        params = (
+            current_user_id,
+            current_user_id,
+            current_user_id,
+            current_user_id,
+            current_user_id
         )
+
+        logging.info(f"[OVERVIEW] Executing SQL with params: {params}")
+
+        cursor.execute(overview_sql, params)
+
         result = cursor.fetchone()
 
-        total_amount = float(result[2]) - float(result[3])
+        logging.info(f"[OVERVIEW] Raw SQL result: {result}")
+
+        if not result:
+            logging.warning("[OVERVIEW] Query returned no results")
+            return jsonify({"error": "No data found"}), 404
+
+        total_amount = float(result[3]) - float(result[4])
 
         overview_data = {
             "total_tenants": result[0],
@@ -59,11 +74,13 @@ def fetch_overview(current_user_id, role):
             "total_listings": result[2],
             "total_income": float(result[3]),
             "total_expenses": float(result[4]),
-            "total amount" : total_amount
+            "total_amount": total_amount
         }
+
+        logging.info(f"[OVERVIEW] Computed overview data: {overview_data}")
 
         return jsonify(overview_data), 200
 
     except Exception as e:
-        logging.error(f"Error fetching overview: {e}")
+        logging.exception("[OVERVIEW] CRITICAL ERROR while fetching overview")
         return jsonify({"error": "An error occurred while fetching overview"}), 500

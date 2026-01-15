@@ -80,6 +80,7 @@ def token_required(f):
         token_device_id = data.get("device_id")
 
         # ---- Device binding ----
+        # code 401 bug here below
         if token_device_id != device_id:
             return jsonify({"error": "Token not valid for this device"}), 401
 

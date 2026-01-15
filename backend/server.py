@@ -43,7 +43,7 @@ CORS(
     supports_credentials=True,
     origins=[
         "http://localhost:5173",
-        "https://zetech-feedback-portal.vercel.app"
+        "https://campushub-website.vercel.app"
     ]
 )
 

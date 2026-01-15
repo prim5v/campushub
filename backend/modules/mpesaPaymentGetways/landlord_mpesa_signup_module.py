@@ -134,7 +134,7 @@ def perform_landlord_mpesa_signup(data):
             "PartyA": phone,
             "PartyB": business_short_code,
             "PhoneNumber": phone,
-            "CallBackURL": "http://192.168.100.2:5000/mpesaPaymentGetways/mpesa_landlord_signup_callback",
+            "CallBackURL": "https://campushub4293.pythonanywhere.com/mpesaPaymentGetways/mpesa_landlord_signup_callback",
             "AccountReference": f"SIGNUP-{email}",
             "TransactionDesc": "CompassHub Landlord Signup"
         }

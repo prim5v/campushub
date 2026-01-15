@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS security_checks (
     check_type ENUM('landlord', 'comrade', 'e_service') NULL,
     status ENUM('pending', 'verified') NOT NULL DEFAULT 'pending',
     reviewed_by VARCHAR(50),
-    review_notes TEXT;
+    review_notes TEXT,
     performed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
