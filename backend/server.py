@@ -36,7 +36,7 @@ mail.init_app(app)
 
 
 app.config["SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
-app.config["UPLOAD_FOLDER"] = "/home/backendagripool4293/backend/static/images"
+app.config["UPLOAD_FOLDER"] = "/home/campushub4293/campushub/backend/static/images"
 
 CORS(
     app,
