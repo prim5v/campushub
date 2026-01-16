@@ -51,10 +51,11 @@ def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         # ---- Device ID ----
-        device_id = (
-            request.headers.get("X-Device-ID")
-            or request.cookies.get("device_id")
-        )
+        # device_id = (
+        #     request.headers.get("X-Device-ID")
+        #     or request.cookies.get("device_id")
+        # )
+        device_id = request.cookies.get("device_id")
         if not device_id:
             return jsonify({"error": "Device ID missing"}), 400
 
