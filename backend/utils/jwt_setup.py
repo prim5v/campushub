@@ -124,7 +124,7 @@ def token_required(f):
 
         # ---- CSRF protection ----
         if request.method in ("POST", "PUT", "PATCH", "DELETE"):
-            csrf_header = request.headers.get("X-CSRF-Token")
+            csrf_header = request.headers.get("X-CSRF-Token") 
             csrf_cookie = request.cookies.get("csrf_token")
 
             if not csrf_header or csrf_header != csrf_cookie:
@@ -135,7 +135,7 @@ def token_required(f):
                     current_user,
                     "CSRF_FAILURE",
                     request,
-                    role=role,
+                    role=role,  
                     status="failure"
                 )
                 return jsonify({"error": "CSRF validation failed"}), 403

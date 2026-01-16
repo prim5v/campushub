@@ -125,7 +125,8 @@ def perform_login(data):
         # get user status
     cursor.execute("SELECT status FROM security_checks WHERE user_id=%s", (user["user_id"],))
     status = cursor.fetchone()["status"]
-
+    
+    csrf_token = secrets.token_hex(32)
 
     # Set cookies and return response
     resp = make_response(jsonify({
@@ -135,12 +136,12 @@ def perform_login(data):
             "username": user["username"],
             "role": user["role"],
             "email": user["email"],
-            "status": status
+            "status": status,
+            "csrf_token": csrf_token
         },
     }))
     resp.set_cookie("device_id", device_id, max_age=365*24*60*60, httponly=True, secure=True, samesite="None", path="/")
     resp.set_cookie("access_token", token, max_age=int((expiry - datetime.utcnow()).total_seconds()), httponly=True, secure=True, samesite="None", path="/")
-    csrf_token = secrets.token_hex(32)
     resp.set_cookie("csrf_token", csrf_token, httponly=False, secure=True, samesite="None", path="/")
 
     return resp
