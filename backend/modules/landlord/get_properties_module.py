@@ -31,22 +31,26 @@ def fetch_properties(current_user_id, role):
     cursor = db.cursor()
 
     try:
-        # 1️⃣ Fetch properties
-        fetch_properties_sql = """
-            SELECT *
-            FROM properties
-            WHERE user_id = %s
+        sql = """
+            SELECT 
+                p.*,
+                l.address,
+                l.latitude,
+                l.longitude
+            FROM properties_data p
+            LEFT JOIN location_data l 
+                ON p.property_id = l.property_id
+            WHERE p.user_id = %s
         """
-        cursor.execute(fetch_properties_sql, (current_user_id,))
+        cursor.execute(sql, (current_user_id,))
         properties = cursor.fetchall()
 
         if not properties:
             return jsonify({"properties": []}), 200
 
-        # 2️⃣ Collect property_ids
-        property_ids = [prop["property_id"] for prop in properties]
+        # Fetch images
+        property_ids = [p["property_id"] for p in properties]
 
-        # 3️⃣ Fetch images for those properties
         fetch_images_sql = """
             SELECT property_id, image_url
             FROM images
@@ -56,18 +60,62 @@ def fetch_properties(current_user_id, role):
         cursor.execute(fetch_images_sql, property_ids)
         images = cursor.fetchall()
 
-        # 4️⃣ Group images by property_id
         images_map = {}
         for img in images:
             images_map.setdefault(img["property_id"], []).append(img["image_url"])
 
-        # 5️⃣ Attach images to properties
         for prop in properties:
             prop["images"] = images_map.get(prop["property_id"], [])
 
         return jsonify({"properties": properties}), 200
 
     except Exception as e:
-        print(f"[ERROR] Exception occurred: {e}")
+        print(f"[ERROR] {e}")
         return jsonify({"error": str(e)}), 500
+
+# {
+#   "properties": [
+#     {
+#       "id": 1,
+#       "property_id": "a8f3c21b9d42",
+#       "user_id": "u123456",
+#       "amenities": ["wifi", "parking", "water"],
+#       "verified": false,
+#       "property_name": "Sunset Apartments",
+#       "property_description": "Modern bedsitters near Sarit Centre",
+#       "property_type": "bedsitter",
+#       "listed_at": "2026-01-10 14:22:11",
+
+#       "address": "Westlands, Nairobi",
+#       "latitude": -1.268452,
+#       "longitude": 36.811923,
+
+#       "images": [
+#         "b3f21c_img1.jpg",
+#         "a72dd_img2.jpg",
+#         "9f1aa_img3.jpg"
+#       ]
+#     },
+#     {
+#       "id": 2,
+#       "property_id": "f91ab72e1c33",
+#       "user_id": "u123456",
+#       "amenities": ["security", "balcony"],
+#       "verified": true,
+#       "property_name": "GreenVille Hostel",
+#       "property_description": "Affordable student hostel near campus",
+#       "property_type": "hostel",
+#       "listed_at": "2026-01-03 09:11:45",
+
+#       "address": "Kasarani, Nairobi",
+#       "latitude": -1.221003,
+#       "longitude": 36.897210,
+
+#       "images": [
+#         "c1a92_hostel1.jpg",
+#         "d9912_hostel2.jpg"
+#       ]
+#     }
+#   ]
+# }
 
