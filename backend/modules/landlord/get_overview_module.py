@@ -34,16 +34,21 @@ def fetch_overview(current_user_id, role, *args, **kwargs):
         db = get_db()
         logging.info("[OVERVIEW] Database connection acquired")
 
-        cursor = db.cursor()
-        logging.info("[OVERVIEW] Cursor created")
+        # IMPORTANT: Use DictCursor
+        cursor = db.cursor(pymysql.cursors.DictCursor)
+        logging.info("[OVERVIEW] Cursor created (DictCursor)")
 
         overview_sql = """
             SELECT 
                 (SELECT COUNT(*) FROM tenants_data WHERE user_id = %s) AS total_tenants,
                 (SELECT COUNT(*) FROM properties_data WHERE user_id = %s) AS total_properties,
                 (SELECT COUNT(*) FROM listings_data WHERE user_id = %s) AS total_listings,
-                (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE user_id = %s AND transaction_type = 'income') AS total_income,
-                (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE user_id = %s AND transaction_type = 'expense') AS total_expenses
+                (SELECT COALESCE(SUM(amount), 0) 
+                 FROM transactions 
+                 WHERE user_id = %s AND transaction_type = 'income') AS total_income,
+                (SELECT COALESCE(SUM(amount), 0) 
+                 FROM transactions 
+                 WHERE user_id = %s AND transaction_type = 'expense') AS total_expenses
         """
 
         params = (
@@ -66,14 +71,18 @@ def fetch_overview(current_user_id, role, *args, **kwargs):
             logging.warning("[OVERVIEW] Query returned no results")
             return jsonify({"error": "No data found"}), 404
 
-        total_amount = float(result[3]) - float(result[4])
+        # Safely convert Decimals / None
+        total_income = float(result["total_income"] or 0)
+        total_expenses = float(result["total_expenses"] or 0)
+
+        total_amount = total_income - total_expenses
 
         overview_data = {
-            "total_tenants": result[0],
-            "total_properties": result[1],
-            "total_listings": result[2],
-            "total_income": float(result[3]),
-            "total_expenses": float(result[4]),
+            "total_tenants": int(result["total_tenants"]),
+            "total_properties": int(result["total_properties"]),
+            "total_listings": int(result["total_listings"]),
+            "total_income": total_income,
+            "total_expenses": total_expenses,
             "total_amount": total_amount
         }
 
