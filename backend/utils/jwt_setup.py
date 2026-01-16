@@ -93,7 +93,7 @@ def token_required(f):
         cursor.execute(
             """
             SELECT * FROM sessions
-            WHERE user_id=%s AND token=%s AND device_id=%s
+            WHERE user_id=%s AND token_hash=%s AND device_id=%s
             """,
             (current_user, token_hash, device_id)
         )
