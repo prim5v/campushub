@@ -26,9 +26,10 @@ import secrets
 
 from ...utils.db_connection import get_db
 
+
 def fetch_properties(current_user_id, role, *args, **kwargs):
     db = get_db()
-    cursor = db.cursor()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
 
     try:
         sql = """
@@ -48,30 +49,42 @@ def fetch_properties(current_user_id, role, *args, **kwargs):
         if not properties:
             return jsonify({"properties": []}), 200
 
+        # -----------------------------
         # Fetch images
+        # -----------------------------
         property_ids = [p["property_id"] for p in properties]
 
-        fetch_images_sql = """
+        placeholders = ",".join(["%s"] * len(property_ids))
+        fetch_images_sql = f"""
             SELECT property_id, image_url
             FROM images
-            WHERE property_id IN (%s)
-        """ % ",".join(["%s"] * len(property_ids))
+            WHERE property_id IN ({placeholders})
+        """
 
         cursor.execute(fetch_images_sql, property_ids)
-        images = cursor.fetchall()
+        image_rows = cursor.fetchall()
 
+        # -----------------------------
+        # Build images map with FULL URLs
+        # -----------------------------
         images_map = {}
-        for img in images:
-            images_map.setdefault(img["property_id"], []).append(img["image_url"])
+        base_url = request.host_url.rstrip("/")
 
+        for img in image_rows:
+            full_url = f"{base_url}/static/images/{img['image_url']}"
+            images_map.setdefault(img["property_id"], []).append(full_url)
+
+        # -----------------------------
+        # Attach images to properties
+        # -----------------------------
         for prop in properties:
             prop["images"] = images_map.get(prop["property_id"], [])
 
         return jsonify({"properties": properties}), 200
 
     except Exception as e:
-        print(f"[ERROR] {e}")
-        return jsonify({"error": str(e)}), 500
+        print(f"[ERROR] fetch_properties: {e}")
+        return jsonify({"error": "Failed to fetch properties"}), 500
 
 # {
 #   "properties": [

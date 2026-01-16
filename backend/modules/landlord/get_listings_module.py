@@ -28,7 +28,7 @@ from ...utils.db_connection import get_db
 
 def fetch_listings(current_user_id, role, *args, **kwargs):
     db = get_db()
-    cursor = db.cursor()
+    cursor = db.cursor(pymysql.cursors.DictCursor)  # get dict results
 
     try:
         # 1️⃣ Fetch listings
@@ -47,19 +47,22 @@ def fetch_listings(current_user_id, role, *args, **kwargs):
         listing_ids = [listing["id"] for listing in listings]
 
         # 3️⃣ Fetch images for those listings
-        fetch_images_sql = """
+        placeholders = ",".join(["%s"] * len(listing_ids))
+        fetch_images_sql = f"""
             SELECT listing_id, image_url
             FROM images
-            WHERE listing_id IN (%s)
-        """ % ",".join(["%s"] * len(listing_ids))
-
+            WHERE listing_id IN ({placeholders})
+        """
         cursor.execute(fetch_images_sql, listing_ids)
-        images = cursor.fetchall()
+        image_rows = cursor.fetchall()
 
-        # 4️⃣ Group images by listing_id
+        # 4️⃣ Build images map with FULL URLs
         images_map = {}
-        for img in images:
-            images_map.setdefault(img["listing_id"], []).append(img["image_url"])
+        base_url = request.host_url.rstrip("/")
+
+        for img in image_rows:
+            full_url = f"{base_url}/static/images/{img['image_url']}"
+            images_map.setdefault(img["listing_id"], []).append(full_url)
 
         # 5️⃣ Attach images to listings
         for listing in listings:
@@ -68,7 +71,6 @@ def fetch_listings(current_user_id, role, *args, **kwargs):
         return jsonify({"listings": listings}), 200
 
     except Exception as e:
-        print(f"[ERROR] Exception occurred: {e}")
-        return jsonify({"error": str(e)}), 500
-
+        print(f"[ERROR] fetch_listings: {e}")
+        return jsonify({"error": "Failed to fetch listings"}), 500
 
