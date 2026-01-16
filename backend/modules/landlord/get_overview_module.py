@@ -42,8 +42,8 @@ def fetch_overview(current_user_id, role, *args, **kwargs):
                 (SELECT COUNT(*) FROM tenants_data WHERE user_id = %s) AS total_tenants,
                 (SELECT COUNT(*) FROM properties_data WHERE user_id = %s) AS total_properties,
                 (SELECT COUNT(*) FROM listings_data WHERE user_id = %s) AS total_listings,
-                (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE user_id = %s AND type = 'income') AS total_income,
-                (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE user_id = %s AND type = 'expense') AS total_expenses
+                (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE user_id = %s AND transaction_type = 'income') AS total_income,
+                (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE user_id = %s AND transaction_type = 'expense') AS total_expenses
         """
 
         params = (

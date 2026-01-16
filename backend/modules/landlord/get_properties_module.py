@@ -38,7 +38,7 @@ def fetch_properties(current_user_id, role, *args, **kwargs):
                 l.latitude,
                 l.longitude
             FROM properties_data p
-            LEFT JOIN location_data l 
+            LEFT JOIN Location_data l 
                 ON p.property_id = l.property_id
             WHERE p.user_id = %s
         """
