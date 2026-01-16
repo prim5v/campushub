@@ -32,7 +32,7 @@ from ...utils.db_connection import get_db
 
 
 
-def fetch_add_listing(current_user_id, role):
+def fetch_add_listing(current_user_id, role, *args, **kwargs):
     upload_folder = current_app.config["UPLOAD_FOLDER"]
 
 

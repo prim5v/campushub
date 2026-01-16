@@ -26,7 +26,7 @@ import secrets
 
 from ...utils.db_connection import get_db
 
-def fetch_listings(current_user_id, role):
+def fetch_listings(current_user_id, role, *args, **kwargs):
     db = get_db()
     cursor = db.cursor()
 
