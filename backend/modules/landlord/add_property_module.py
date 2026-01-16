@@ -29,16 +29,17 @@ from ...utils.db_connection import get_db
 
 
 
-
-
-def fetch_add_property(current_user_id, role):
+def fetch_add_property(current_user_id, role, *args, **kwargs):
     upload_folder = current_app.config["UPLOAD_FOLDER"]
+    print(f"[DEBUG] Upload folder: {upload_folder}")
+    print(f"[DEBUG] Current user ID: {current_user_id}, role: {role}")
 
     db = get_db()
     cursor = db.cursor()
 
     # Get data from form or JSON
-    data = request.get_json() or request.form
+    data = request.form
+    print(f"[DEBUG] Incoming data keys: {list(data.keys()) if data else 'No data'}")
 
     property_name = data.get("property_name")
     property_description = data.get("property_description")
@@ -50,22 +51,28 @@ def fetch_add_property(current_user_id, role):
     longitude = data.get("longitude")
 
     images = request.files.getlist("product_images")
+    print(f"[DEBUG] Number of uploaded images: {len(images)}")
 
     # Validation
     if not images or len(images) == 0:
+        print("[ERROR] No images provided")
         return jsonify({"error": "At least one listing image is required"}), 400
 
     if not all([property_name, property_description, property_type, address, latitude, longitude]):
+        print("[ERROR] Missing required fields")
         return jsonify({"error": "All fields including location are required"}), 400
 
     allowed_types = {"house", "apartment", "condo", "townhouse", "hostel", "bedsitter"}
     if property_type not in allowed_types:
+        print(f"[ERROR] Invalid property type: {property_type}")
         return jsonify({"error": "Invalid property type"}), 400
 
     os.makedirs(upload_folder, exist_ok=True)
+    print("[DEBUG] Upload folder created or exists")
 
     # Generate 12+ char UUID
     property_id = uuid.uuid4().hex[:12]
+    print(f"[DEBUG] Generated property ID: {property_id}")
 
     try:
         # 1️⃣ Insert property
@@ -84,6 +91,7 @@ def fetch_add_property(current_user_id, role):
             (property_id, current_user_id, property_name, property_description, property_type)
         )
         db.commit()
+        print("[DEBUG] Property inserted successfully")
 
         # 2️⃣ Insert images
         insert_image = """
@@ -95,11 +103,12 @@ def fetch_add_property(current_user_id, role):
             filename = f"{uuid.uuid4().hex}_{image.filename}"
             image_path = os.path.join(upload_folder, filename)
             image.save(image_path)
-
             cursor.execute(insert_image, (current_user_id, property_id, filename))
             saved_files.append(filename)
+            print(f"[DEBUG] Saved image: {filename}")
 
         db.commit()
+        print(f"[DEBUG] Total images saved: {len(saved_files)}")
 
         # 3️⃣ Insert location data
         insert_location = """
@@ -108,6 +117,7 @@ def fetch_add_property(current_user_id, role):
         """
         cursor.execute(insert_location, (current_user_id, property_id, latitude, longitude, address))
         db.commit()
+        print("[DEBUG] Location data inserted successfully")
 
         return jsonify({
             "status": "success",
@@ -117,4 +127,5 @@ def fetch_add_property(current_user_id, role):
 
     except Exception as e:
         db.rollback()
+        print(f"[ERROR] Exception occurred: {e}")
         return jsonify({"error": str(e)}), 500

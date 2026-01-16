@@ -34,6 +34,6 @@ from ...utils.jwt_setup import token_required, require_role
 @token_required
 @require_role("landlord")
 @limiter.limit("10 per minute")  # moderate protection
-def get_properties(current_user_id, role):
-    response = fetch_properties(current_user_id, role)  # call module function that handles DB
+def get_properties(current_user_id, role, *args, **kwargs):
+    response = fetch_properties(current_user_id, role, *args, **kwargs)  # call module function that handles DB
     return response

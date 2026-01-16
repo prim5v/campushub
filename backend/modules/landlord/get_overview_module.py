@@ -27,7 +27,7 @@ import secrets
 from ...utils.db_connection import get_db
 import logging
 
-def fetch_overview(current_user_id, role):
+def fetch_overview(current_user_id, role, *args, **kwargs):
     logging.info(f"[OVERVIEW] Fetching overview for user_id={current_user_id}, role={role}")
 
     try:

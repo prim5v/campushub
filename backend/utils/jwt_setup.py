@@ -24,6 +24,8 @@ def generate_jwt(user_id, role, device_id, session_id):
         expiry = datetime.utcnow() + timedelta(minutes=1)
     elif role == "comrade":
         expiry = datetime.utcnow() + timedelta(hours=8)
+    elif role == "landlord":
+        expiry = datetime.utcnow() + timedelta(hours=6)
     else:
         expiry = datetime.utcnow() + timedelta(hours=5)
 
