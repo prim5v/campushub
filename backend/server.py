@@ -41,10 +41,12 @@ app.config["UPLOAD_FOLDER"] = "/home/campushub4293/campushub/backend/static/imag
 CORS(
     app,
     supports_credentials=True,
-    origins=[
-        "http://localhost:5173",
-        "https://campushub-website.vercel.app"
-    ]
+    resources={r"/*": {
+        "origins": [
+            "http://localhost:5173",
+            "https://campushub-website.vercel.app"
+        ]
+    }}
 )
 
 
