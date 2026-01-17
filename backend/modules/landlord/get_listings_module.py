@@ -28,7 +28,7 @@ from ...utils.db_connection import get_db
 
 def fetch_listings(current_user_id, role, *args, **kwargs):
     db = get_db()
-    cursor = db.cursor(pymysql.cursors.DictCursor)  # get dict results
+    cursor = db.cursor(pymysql.cursors.DictCursor)
 
     try:
         # 1️⃣ Fetch listings
@@ -43,8 +43,13 @@ def fetch_listings(current_user_id, role, *args, **kwargs):
         if not listings:
             return jsonify({"listings": []}), 200
 
-        # 2️⃣ Get listing IDs
+        # 2️⃣ Collect listing IDs and property IDs
         listing_ids = [listing["id"] for listing in listings]
+        property_ids = list(set([
+            listing["property_id"]
+            for listing in listings
+            if listing.get("property_id")
+        ]))
 
         # 3️⃣ Fetch images for those listings
         placeholders = ",".join(["%s"] * len(listing_ids))
@@ -56,7 +61,7 @@ def fetch_listings(current_user_id, role, *args, **kwargs):
         cursor.execute(fetch_images_sql, listing_ids)
         image_rows = cursor.fetchall()
 
-        # 4️⃣ Build images map with FULL URLs
+        # 4️⃣ Build images map
         images_map = {}
         base_url = request.host_url.rstrip("/")
 
@@ -64,9 +69,34 @@ def fetch_listings(current_user_id, role, *args, **kwargs):
             full_url = f"{base_url}/static/images/{img['image_url']}"
             images_map.setdefault(img["listing_id"], []).append(full_url)
 
-        # 5️⃣ Attach images to listings
+        # 5️⃣ Fetch locations using property_id
+        locations_map = {}
+
+        if property_ids:
+            prop_placeholders = ",".join(["%s"] * len(property_ids))
+            fetch_locations_sql = f"""
+                SELECT property_id, address, latitude, longitude
+                FROM Location_data
+                WHERE property_id IN ({prop_placeholders})
+            """
+            cursor.execute(fetch_locations_sql, property_ids)
+            location_rows = cursor.fetchall()
+
+            for loc in location_rows:
+                locations_map[loc["property_id"]] = {
+                    "address": loc["address"],
+                    "latitude": float(loc["latitude"]),
+                    "longitude": float(loc["longitude"]),
+                }
+
+        # 6️⃣ Attach images + location to listings
         for listing in listings:
             listing["images"] = images_map.get(listing["id"], [])
+
+            listing["location"] = locations_map.get(
+                listing["property_id"],
+                None  # or {"address": None, "latitude": None, "longitude": None}
+            )
 
         return jsonify({"listings": listings}), 200
 
@@ -74,3 +104,35 @@ def fetch_listings(current_user_id, role, *args, **kwargs):
         print(f"[ERROR] fetch_listings: {e}")
         return jsonify({"error": "Failed to fetch listings"}), 500
 
+
+
+
+{
+    "listings": [
+        {
+            "id": 1,
+            "listing_id": "LIST123",
+            "property_id": "PROP456",
+            "user_id": "USER789",
+            "listing_name": "Modern Bedsitter",
+            "listing_description": "A cozy and modern bedsitter located in the heart of the city.",
+            "deposits": { "deposit amount": 5000, "water deposits":2000, "electricity deposits":3000 },
+            "listing_type": "bedsitter",
+            "price": 12000,
+            "renting_price": 13000,
+            "timeline": "monthly",
+            "availability_status": "available",
+            "availability_date": "2023-10-01",
+            "listed_at": "2023-09-15T10:00:00",
+            "images": [
+            "http://127.0.0.1:5000/static/images/img1.jpg",
+            "http://127.0.0.1:5000/static/images/img2.jpg"
+            ],
+        "location": {
+            "address": "Thika Road, Roysambu",
+            "latitude": -1.218453,
+            "longitude": 36.889012
+        }
+        }
+    ]
+}

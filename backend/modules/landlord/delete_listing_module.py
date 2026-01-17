@@ -25,7 +25,7 @@ import secrets
 
 from ...utils.db_connection import get_db
 
-def remove_listing(current_user_id, role, listing_id):
+def remove_listing(current_user_id, role, listing_id, *args, **kwargs):
     db = get_db()
     cursor = db.cursor()
 

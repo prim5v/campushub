@@ -27,12 +27,14 @@ import secrets
 from . import landlord  # your blueprint
 from ...utils.limiter import limiter
 from ...modules.landlord.add_listing_module import fetch_add_listing
-from ...utils.jwt_setup import token_required, require_role
-
+from ...utils.jwt_setup import token_required, require_role, require_verified_user
+from ...utils.plan_limits import plan_limit_required
 
 @landlord.route("/add_listing", methods=["POST"])
 @token_required
 @require_role("landlord")
+@require_verified_user
+@plan_limit_required("listing")
 @limiter.limit("10 per minute")  # moderate protection
 def add_listing(current_user_id, role, *args, **kwargs):
     response = fetch_add_listing(current_user_id, role, *args, **kwargs)  # call module function that handles DB

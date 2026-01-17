@@ -4,6 +4,8 @@ import jwt
 import hashlib
 from functools import wraps
 from datetime import datetime, timedelta
+import pymysql
+
 
 
 from flask import (
@@ -208,4 +210,37 @@ def require_role(required_roles):
         return wrapper
 
     return decorator
+
+# ================= VERIFIED USER DECORATOR =================
+def require_verified_user(f):
+    """
+    Ensures that the user has a verified security check.
+    Must be used **after** @token_required, so `current_user` is available.
+    """
+    @wraps(f)
+    def wrapper(current_user, role, *args, **kwargs):
+        db = get_db()
+        cursor = db.cursor(pymysql.cursors.DictCursor)
+        
+        cursor.execute(
+            """
+            SELECT status 
+            FROM security_checks
+            WHERE user_id = %s AND check_type = 'landlord'
+            """,
+            (current_user,)
+        )
+        check = cursor.fetchone()
+
+        if not check or check.get("status") != "verified":
+            return jsonify({
+                "error": "User not verified",
+                "message": "You need to complete verification before accessing this feature."
+            }), 403
+
+        # ✅ Proceed to the wrapped route
+        return f(current_user, role, *args, **kwargs)
+    
+    return wrapper
+
 

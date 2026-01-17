@@ -49,6 +49,7 @@ def fetch_add_listing(current_user_id, role, *args, **kwargs):
     availability_date = data.get("availability_date")
     timeline = data.get("timeline")
     price = data.get("price")
+    deposits = data.get("deposits")
 
     images = request.files.getlist("product_images")
 
@@ -69,6 +70,9 @@ def fetch_add_listing(current_user_id, role, *args, **kwargs):
 
     # Generate 12+ char UUID
     listing_id = uuid.uuid4().hex[:12]
+    profitpercent = 0.1 # 10% profit change as per business logic
+    profit = profitpercent * price
+    renting_price = float(price) + profit
 
     try:
         # 1️⃣ Insert listing
@@ -76,9 +80,9 @@ def fetch_add_listing(current_user_id, role, *args, **kwargs):
             INSERT INTO listings_data (
                 listing_id, user_id, property_id, listing_name, listing_type,
                 listing_description, availability_status,
-                availability_date, timeline, price
+                availability_date, timeline, price, renting_price, deposits
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
 
         cursor.execute(
@@ -94,6 +98,8 @@ def fetch_add_listing(current_user_id, role, *args, **kwargs):
                 availability_date,
                 timeline,
                 price,
+                renting_price,
+                deposits
             ),
         )
 

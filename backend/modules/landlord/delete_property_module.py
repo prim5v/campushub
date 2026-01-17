@@ -25,7 +25,7 @@ import secrets
 
 from ...utils.db_connection import get_db
 
-def remove_property(current_user_id, role, property_id):
+def remove_property(current_user_id, role, property_id, *args, **kwargs):
     db = get_db()
     cursor = db.cursor()
 

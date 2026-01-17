@@ -27,13 +27,14 @@ import secrets
 from . import landlord  # your blueprint
 from ...utils.limiter import limiter
 from ...modules.landlord.delete_listing_module import remove_listing
-from ...utils.jwt_setup import token_required, require_role
+from ...utils.jwt_setup import token_required, require_role, require_verified_user  
 
 
 @landlord.route("/delete_listing/<listing_id>", methods=["DELETE"])
 @token_required
 @require_role("landlord")
+@require_verified_user
 @limiter.limit("10 per minute")  # moderate protection
-def delete_listing(current_user_id, role, listing_id):
+def delete_listing(current_user_id, role, listing_id, *args, **kwargs):
     response = remove_listing(current_user_id, role, listing_id)  # call module function that handles DB
     return response
