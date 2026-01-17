@@ -30,7 +30,7 @@ def remove_listing(current_user_id, role, listing_id):
     cursor = db.cursor()
 
     try:
-        deletesql = "DELETE FROM listings WHERE listing_id = %s AND user_id = %s"
+        deletesql = "DELETE FROM listings_data WHERE listing_id = %s AND user_id = %s"
         data = (listing_id, current_user_id)
         cursor.execute(deletesql, data)
 
