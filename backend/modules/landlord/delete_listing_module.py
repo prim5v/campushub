@@ -25,7 +25,7 @@ import secrets
 
 from ...utils.db_connection import get_db
 
-def remove_listing(current_user_id, role, listing_id, *args, **kwargs):
+def remove_listing(current_user_id, role, listing_id):
     db = get_db()
     cursor = db.cursor()
 
@@ -37,6 +37,7 @@ def remove_listing(current_user_id, role, listing_id, *args, **kwargs):
         deleteimagessql = "DELETE FROM images WHERE listing_id = %s AND user_id = %s"
         cursor.execute(deleteimagessql, (listing_id, current_user_id))  
         
+        db.commit()
         return jsonify(
             {
                 "status" : "success" 

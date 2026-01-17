@@ -25,17 +25,19 @@ import secrets
 
 from ...utils.db_connection import get_db
 
-def remove_property(current_user_id, role, property_id, *args, **kwargs):
+def remove_property(current_user_id, role, property_id):
     db = get_db()
     cursor = db.cursor()
 
     try:
-        deletesql = "DELETE FROM properties WHERE property_id = %s AND user_id = %s"
+        deletesql = "DELETE FROM properties_data WHERE property_id = %s AND user_id = %s"
         data = (property_id, current_user_id)
         cursor.execute(deletesql, data)
 
         deleteimagesql = "DELETE FROM images WHERE property_id = %s AND user_id = %s"
         cursor.execute(deleteimagesql, (property_id, current_user_id))
+
+        db.commit()
         
         return jsonify(
             {
