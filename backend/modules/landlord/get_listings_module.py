@@ -44,7 +44,7 @@ def fetch_listings(current_user_id, role, *args, **kwargs):
             return jsonify({"listings": []}), 200
 
         # 2️⃣ Collect listing IDs and property IDs
-        listing_ids = [listing["id"] for listing in listings]
+        listing_ids = [listing["listing_id"] for listing in listings]
         property_ids = list(set([
             listing["property_id"]
             for listing in listings
