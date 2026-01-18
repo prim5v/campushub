@@ -47,7 +47,6 @@ def handle_mpesa_landlord_signup_callback(data):
     try:
         logger.info("📞 MPESA CALLBACK RECEIVED")
 
-        # data = request.get_json(force=True)
         logger.info(f"📩 CALLBACK RAW DATA: {json.dumps(data)}")
 
         stk = data.get("Body", {}).get("stkCallback", {})
@@ -58,14 +57,14 @@ def handle_mpesa_landlord_signup_callback(data):
 
         logger.info(f"📦 ResultCode={result_code}, CheckoutRequestID={checkout_request_id}")
 
+        db = get_db()
+        cursor = db.cursor()
+
         # ===============================
         # If payment failed
         # ===============================
         if result_code != 0:
             logger.warning(f"❌ Payment failed: {result_desc}")
-
-            db = get_db()
-            cursor = db.cursor()
 
             cursor.execute("""
                 UPDATE pending_landlord_signups
@@ -74,6 +73,7 @@ def handle_mpesa_landlord_signup_callback(data):
             """, (checkout_request_id,))
             db.commit()
 
+            # Always return success to Safaricom
             return jsonify({"ResultCode": 0, "ResultDesc": "Handled"}), 200
 
         # ===============================
@@ -96,11 +96,8 @@ def handle_mpesa_landlord_signup_callback(data):
 
         logger.info(f"💰 Payment success: amount={amount}, receipt={mpesa_receipt}, phone={phone}")
 
-        db = get_db()
-        cursor = db.cursor()
-
         # ===============================
-        # 🔥 CHECK IF THIS IS A LANDLORD SIGNUP PAYMENT
+        # Check if this is a landlord signup payment
         # ===============================
         cursor.execute("""
             SELECT *
@@ -109,47 +106,63 @@ def handle_mpesa_landlord_signup_callback(data):
         """, (checkout_request_id,))
         pending = cursor.fetchone()
 
-        if pending:
-            logger.info(f"🎯 Payment belongs to pending signup: {pending['email']}")
+        if not pending:
+            logger.info("ℹ️ Payment is not a signup payment. Ignoring.")
+            return jsonify({"ResultCode": 0, "ResultDesc": "Success"}), 200
 
-            # Generate OTP
-            otp = generate_otp()
-            expires_at = datetime.utcnow() + timedelta(minutes=5)
-            # get plan using plan_id
-            cursor.execute("SELECT plan FROM plans WHERE plan_id = %s", (pending["plan_id"],))
-            plan_result = cursor.fetchone()
-            plan = plan_result["plan"] if plan_result else "free"
+        logger.info(f"🎯 Payment belongs to pending signup: {pending['email']}")
 
-            # Remove old OTP
-            cursor.execute("DELETE FROM email_otp WHERE email = %s", (pending["email"],))
+        # ===============================
+        # Generate OTP
+        # ===============================
+        otp = generate_otp()
+        expires_at = datetime.utcnow() + timedelta(minutes=5)
 
-            # Insert into email_otp
-            cursor.execute("""
-                INSERT INTO email_otp
-                (email, username, password_hash, role, otp_code, plan, expires_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """, (
-                pending["email"],
-                pending["username"],
-                pending["password_hash"],
-                pending["role"],
-                otp,
-                plan,
-                expires_at
-            ))
+        # ===============================
+        # Get plan name safely
+        # ===============================
+        cursor.execute("SELECT name FROM plans WHERE plan_id = %s", (pending["plan_id"],))
+        plan_result = cursor.fetchone()
+        plan = plan_result["name"] if plan_result else "free"
 
-            # Mark pending as paid
-            cursor.execute("""
-                UPDATE pending_landlord_signups
-                SET status='paid'
-                WHERE id=%s
-            """, (pending["id"],))
+        # ===============================
+        # Remove old OTP
+        # ===============================
+        cursor.execute("DELETE FROM email_otp WHERE email = %s", (pending["email"],))
 
-            db.commit()
+        # ===============================
+        # Insert new OTP record
+        # ===============================
+        cursor.execute("""
+            INSERT INTO email_otp
+            (email, username, password_hash, role, otp_code, plan, expires_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (
+            pending["email"],
+            pending["username"],
+            pending["password_hash"],
+            pending["role"],
+            otp,
+            plan,
+            expires_at
+        ))
 
-            # Send OTP email
-            msg = Message("Verify Your Email", recipients=[pending["email"]])
-            msg.body = f"""Hello {pending['username']},
+        # ===============================
+        # Mark pending as paid
+        # ===============================
+        cursor.execute("""
+            UPDATE pending_landlord_signups
+            SET status='paid'
+            WHERE id=%s
+        """, (pending["id"],))
+
+        db.commit()
+
+        # ===============================
+        # Send OTP email
+        # ===============================
+        msg = Message("Verify Your Email", recipients=[pending["email"]])
+        msg.body = f"""Hello {pending['username']},
 
 Your verification code is: {otp}
 
@@ -157,22 +170,17 @@ This code expires in 5 minutes.
 
 — CompassHub
 """
-            mail.send(msg)
+        mail.send(msg)
 
-            logger.info(f"📧 OTP sent to {pending['email']} after payment")
-
-            # IMPORTANT: Respond to Safaricom
-            return jsonify({"ResultCode": 0, "ResultDesc": "Success"}), 200
+        logger.info(f"📧 OTP sent to {pending['email']} after payment")
 
         # ===============================
-        # Otherwise → normal payment (future orders)
+        # Respond to Safaricom
         # ===============================
-        logger.info("ℹ️ Payment is not a signup payment. Ignoring for now.")
-
         return jsonify({"ResultCode": 0, "ResultDesc": "Success"}), 200
 
-    except Exception as e:
+    except Exception:
         logger.exception("🔥 CALLBACK CRASHED")
 
-        # Must still return 200 to Safaricom
+        # ⚠️ CRITICAL: Always return 200 to Safaricom
         return jsonify({"ResultCode": 0, "ResultDesc": "Error handled"}), 200
