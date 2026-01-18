@@ -91,7 +91,7 @@ def fetch_listings(current_user_id, role, *args, **kwargs):
 
         # 6️⃣ Attach images + location to listings
         for listing in listings:
-            listing["images"] = images_map.get(listing["id"], [])
+            listing["images"] = images_map.get(listing["listing_id"], [])
 
             listing["location"] = locations_map.get(
                 listing["property_id"],

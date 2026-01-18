@@ -124,13 +124,13 @@ def perform_landlord_mpesa_signup(data):
 
         # =========================
         # Build STK payload
-        # =========================
+        # ========================= int(price)
         payload = {
             "BusinessShortCode": business_short_code,
             "Password": encoded_password,
             "Timestamp": timestamp,
             "TransactionType": "CustomerPayBillOnline",
-            "Amount": int(price),
+            "Amount": 1,
             "PartyA": phone,
             "PartyB": business_short_code,
             "PhoneNumber": phone,
