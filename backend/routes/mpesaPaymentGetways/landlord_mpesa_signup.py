@@ -27,12 +27,14 @@ from . import mpesaPaymentGetways
 from ...utils.limiter import limiter
 from ...modules.mpesaPaymentGetways.landlord_mpesa_signup_module import perform_landlord_mpesa_signup
 from ...utils.jwt_setup import token_required, require_role
+from ...utils.check_paid_signup import require_paid_signup
 
 @mpesaPaymentGetways.route("/landlord_mpesa_signup", methods=['POST'])
+@require_paid_signup
 # @token_required
 # @require_role("landlord")
 @limiter.limit("5 per minute")
-def landlord_mpesa_signup():
+def landlord_mpesa_signup():    
     data = request.json or request.form
     response = perform_landlord_mpesa_signup(data)  # call module function that handles DB
     return response

@@ -8,3 +8,4 @@ from .gemini_setup import client as gemini_client
 from .gemini_setup import GEMINI_API_KEY
 from .audit import log_audit
 from .plan_limits import plan_limit_required
+from .check_paid_signup import require_paid_signup

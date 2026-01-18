@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS email_otp (
     role ENUM('admin', 'comrade', 'landlord', 'e_service') NOT NULL,
 
     otp_code VARCHAR(10) NOT NULL,
+    plan VARCHAR(50) NULL DEFAULT 'free',
     expires_at TIMESTAMP NOT NULL,
 
     attempts INT DEFAULT 0,

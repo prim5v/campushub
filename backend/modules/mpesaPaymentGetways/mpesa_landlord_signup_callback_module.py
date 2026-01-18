@@ -115,6 +115,10 @@ def handle_mpesa_landlord_signup_callback(data):
             # Generate OTP
             otp = generate_otp()
             expires_at = datetime.utcnow() + timedelta(minutes=5)
+            # get plan using plan_id
+            cursor.execute("SELECT plan FROM plans WHERE plan_id = %s", (pending["plan_id"],))
+            plan_result = cursor.fetchone()
+            plan = plan_result["plan"] if plan_result else "free"
 
             # Remove old OTP
             cursor.execute("DELETE FROM email_otp WHERE email = %s", (pending["email"],))
@@ -122,14 +126,15 @@ def handle_mpesa_landlord_signup_callback(data):
             # Insert into email_otp
             cursor.execute("""
                 INSERT INTO email_otp
-                (email, username, password_hash, role, otp_code, expires_at)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                (email, username, password_hash, role, otp_code, plan, expires_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
             """, (
                 pending["email"],
                 pending["username"],
                 pending["password_hash"],
                 pending["role"],
                 otp,
+                plan,
                 expires_at
             ))
 

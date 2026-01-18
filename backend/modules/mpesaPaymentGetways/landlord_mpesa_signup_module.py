@@ -95,6 +95,7 @@ def perform_landlord_mpesa_signup(data):
             logger.warning("❌ Free plan not supported here")
             return jsonify({"error": "plan is free"}), 400
 
+        
         # =========================
         # Hash password
         # =========================
