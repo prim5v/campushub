@@ -24,8 +24,29 @@ def require_paid_signup(f):
         db = get_db()
         cursor = db.cursor(pymysql.cursors.DictCursor)
 
-        data = request.json or request.form
-        email = data.get("email")
+        # data = request.json or request.form
+        # email = data.get("email")
+        def extract_email():
+            # 1. Try normal form field
+            if request.form.get("email"):
+                return request.form.get("email")
+
+            # 2. Try JSON body
+            data = request.get_json(silent=True) or {}
+
+            # Direct email
+            if data.get("email"):
+                return data.get("email")
+
+            # Nested payload: user.email
+            if isinstance(data.get("user"), dict):
+                if data["user"].get("email"):
+                    return data["user"]["email"]
+
+            return None
+
+
+        email = extract_email()
 
         if not email:
             return jsonify({"error": "Email is required"}), 400
