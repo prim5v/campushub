@@ -26,12 +26,14 @@ import secrets
 
 from ...utils.db_connection import get_db
 
-
 def fetch_properties(current_user_id, role, *args, **kwargs):
     db = get_db()
     cursor = db.cursor(pymysql.cursors.DictCursor)
 
     try:
+        # -----------------------------
+        # 1️⃣ Fetch landlord properties
+        # -----------------------------
         sql = """
             SELECT 
                 p.*,
@@ -47,44 +49,50 @@ def fetch_properties(current_user_id, role, *args, **kwargs):
         properties = cursor.fetchall()
 
         if not properties:
-            return jsonify({"properties": []}), 200
+            properties = []
 
         # -----------------------------
-        # Fetch images
+        # 2️⃣ Fetch images for properties
         # -----------------------------
-        property_ids = [p["property_id"] for p in properties]
+        if properties:
+            property_ids = [p["property_id"] for p in properties]
+            placeholders = ",".join(["%s"] * len(property_ids))
+            fetch_images_sql = f"""
+                SELECT property_id, image_url
+                FROM images
+                WHERE property_id IN ({placeholders})
+            """
+            cursor.execute(fetch_images_sql, property_ids)
+            image_rows = cursor.fetchall()
 
-        placeholders = ",".join(["%s"] * len(property_ids))
-        fetch_images_sql = f"""
-            SELECT property_id, image_url
-            FROM images
-            WHERE property_id IN ({placeholders})
-        """
+            # Map images to properties
+            images_map = {}
+            base_url = request.host_url.rstrip("/")
+            for img in image_rows:
+                full_url = f"{base_url}/static/images/{img['image_url']}"
+                images_map.setdefault(img["property_id"], []).append(full_url)
 
-        cursor.execute(fetch_images_sql, property_ids)
-        image_rows = cursor.fetchall()
+            for prop in properties:
+                prop["images"] = images_map.get(prop["property_id"], [])
 
         # -----------------------------
-        # Build images map with FULL URLs
+        # 3️⃣ Fetch all amenities
         # -----------------------------
-        images_map = {}
-        base_url = request.host_url.rstrip("/")
-
-        for img in image_rows:
-            full_url = f"{base_url}/static/images/{img['image_url']}"
-            images_map.setdefault(img["property_id"], []).append(full_url)
+        cursor.execute("SELECT * FROM amenities ORDER BY id ASC")
+        amenities = cursor.fetchall()  # List of all amenities with id, key, label
 
         # -----------------------------
-        # Attach images to properties
+        # 4️⃣ Return combined response
         # -----------------------------
-        for prop in properties:
-            prop["images"] = images_map.get(prop["property_id"], [])
-
-        return jsonify({"properties": properties}), 200
+        return jsonify({
+            "properties": properties,
+            "amenities": amenities
+        }), 200
 
     except Exception as e:
         print(f"[ERROR] fetch_properties: {e}")
         return jsonify({"error": "Failed to fetch properties"}), 500
+
 
 # {
 #   "properties": [
