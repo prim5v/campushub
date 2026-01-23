@@ -82,6 +82,24 @@ CREATE TABLE IF NOT EXISTS email_otp (
     UNIQUE(email)
 );
 
+CREATE TABLE rooms (
+    id SERIAL PRIMARY KEY,
+    landlord_id INT REFERENCES landlords(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    type VARCHAR(50),
+    price DECIMAL(10,2),
+    deposit DECIMAL(10,2),
+    location VARCHAR(255),
+    distance VARCHAR(50),
+    size VARCHAR(50),
+    max_occupants INT,
+    available_from DATE,
+    description TEXT,
+    verified BOOLEAN DEFAULT FALSE,
+    rating DECIMAL(2,1),
+    reviews_count INT DEFAULT 0
+);
+
 
 
 Create table if not exists listings_data (
@@ -92,6 +110,8 @@ Create table if not exists listings_data (
     listing_name VARCHAR(100) NOT NULL,
     listing_description TEXT NOT NULL,
     deposits JSON,
+    room_size VARCHAR(50),
+    max_occupants INT NULL,
     listing_type enum ('apartment', 'bedsitter', 'hostel'),
     price DECIMAL(10,2) NOT NULL,
     renting_price DECIMAL(10,2) NULL,
@@ -102,17 +122,31 @@ Create table if not exists listings_data (
 );
 
 
+
 Create table if not exists properties_data (
     id SERIAL PRIMARY KEY,
     property_id VARCHAR(50) UNIQUE NOT NULL,
     user_id VARCHAR(50) REFERENCES users(user_id) ON DELETE CASCADE,
-    amenities JSON,
     verified BOOLEAN DEFAULT FALSE,
     property_name VARCHAR(100) NOT NULL,
     property_description TEXT NOT NULL,
     property_type enum ('house', 'apartment', 'condo', 'townhouse', 'hostel', 'bedsitter'),
     listed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
+
+CREATE TABLE amenities (
+    id SERIAL PRIMARY KEY,
+    key VARCHAR(50) NOT NULL UNIQUE,
+    label VARCHAR(100) NOT NULL
+);
+
+
+CREATE TABLE listings_amenities (
+    listing_id VARCHAR(50) REFERENCES listings_data(listing_id) ON DELETE CASCADE,
+    amenity_id INT REFERENCES amenities(id) ON DELETE CASCADE,
+    available BOOLEAN DEFAULT TRUE,
+    PRIMARY KEY(listing_id, amenity_id)
+);
 
 
 

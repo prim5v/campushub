@@ -1,0 +1,51 @@
+INSERT INTO amenities (key, label) VALUES
+('wifi', 'Wi-Fi'),
+('fibre', 'Fibre Internet'),
+('borehole', 'Borehole Water'),
+('city_water', 'City Water'),
+('prepaid_power', 'Prepaid Electricity'),
+('backup_power', 'Backup Power'),
+('solar_hot_water', 'Solar Hot Water'),
+('water_tank', 'Water Tank'),
+
+('security', '24/7 Security'),
+('cctv', 'CCTV'),
+('gated', 'Gated Compound'),
+('electric_fence', 'Electric Fence'),
+('controlled_access', 'Controlled Access'),
+
+('parking', 'Parking'),
+('private_parking', 'Private Parking'),
+('motorbike_parking', 'Motorbike Parking'),
+
+('furnished', 'Furnished'),
+('semi_furnished', 'Semi-Furnished'),
+('wardrobe', 'Built-in Wardrobes'),
+('balcony', 'Balcony'),
+('tiled_floor', 'Tiled Floor'),
+('wood_floor', 'Wooden Floor'),
+('open_kitchen', 'Open Kitchen'),
+('kitchen_cabinets', 'Kitchen Cabinets'),
+('pantry', 'Pantry'),
+
+('hot_shower', 'Hot Shower'),
+('bathtub', 'Bathtub'),
+('instant_shower', 'Instant Shower'),
+('separate_toilet', 'Separate Toilet'),
+('laundry_area', 'Laundry Area'),
+('drying_area', 'Drying Area'),
+
+('elevator', 'Elevator'),
+('caretaker', 'Caretaker On Site'),
+('garbage', 'Garbage Collection'),
+('garden', 'Garden'),
+('rooftop', 'Rooftop Access'),
+
+('shared_kitchen', 'Shared Kitchen'),
+('shared_bathroom', 'Shared Bathroom'),
+('study_area', 'Study Area'),
+('common_room', 'Common Room'),
+('warden', 'On-site Warden'),
+
+('pets_allowed', 'Pets Allowed'),
+('no_smoking', 'No Smoking');

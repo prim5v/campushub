@@ -32,13 +32,17 @@ from ...utils.db_connection import get_db
 
 
 def fetch_add_listing(current_user_id, role, *args, **kwargs):
+    """
+    Add a new listing with images, amenities, room size, and max occupants.
+    listing_id is now VARCHAR, compatible with UUID strings.
+    """
     upload_folder = current_app.config["UPLOAD_FOLDER"]
-
     db = get_db()
-    cursor = db.cursor()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
 
     data = request.form  # REQUIRED for file uploads
 
+    # Required fields
     listing_name = data.get("listing_name")
     property_id = data.get("property_id")
     listing_description = data.get("listing_description")
@@ -49,59 +53,75 @@ def fetch_add_listing(current_user_id, role, *args, **kwargs):
     price = data.get("price")
     deposits = data.get("deposits")
 
+    # New optional fields
+    room_size = data.get("room_size")  # e.g., "18 sqm"
+    max_occupants = data.get("max_occupants")  # e.g., "2"
+
+    # Parse max_occupants as integer if provided
+    if max_occupants:
+        try:
+            max_occupants = int(max_occupants)
+            if max_occupants <= 0:
+                return jsonify({"error": "max_occupants must be greater than 0"}), 400
+        except ValueError:
+            return jsonify({"error": "max_occupants must be an integer"}), 400
+    else:
+        max_occupants = None
+
+    # Amenities passed from frontend as JSON array: ["wifi", "parking"]
+    amenities_raw = data.get("amenities")
+    amenities_keys = []
+    if amenities_raw:
+        try:
+            import json
+            amenities_keys = json.loads(amenities_raw)
+        except Exception:
+            return jsonify({"error": "Invalid amenities format"}), 400
+
     images = request.files.getlist("product_images")
 
-    logging.info(f"Add listing request from user_id={current_user_id}, property_id={property_id}")
-
-    if not images or len(images) == 0:
-        logging.warning("No images provided")
+    # Validate required fields
+    if not images:
         return jsonify({"error": "At least one listing image is required"}), 400
 
     if not all([listing_name, property_id, availability_status, price]):
-        logging.warning("Missing required fields")
         return jsonify({"error": "Missing required fields"}), 400
 
     try:
-        # Safely cast price to float
         price = float(price)
         if price <= 0:
-            logging.warning(f"Invalid price: {price}")
             return jsonify({"error": "Price must be greater than 0"}), 400
     except ValueError:
-        logging.error(f"Price is not a valid number: {price}")
         return jsonify({"error": "Price must be a valid number"}), 400
 
     allowed_timeline = {"daily", "weekly", "monthly"}
     if timeline not in allowed_timeline:
-        logging.warning(f"Invalid timeline: {timeline}")
         return jsonify({"error": "Invalid timeline value"}), 400
 
     os.makedirs(upload_folder, exist_ok=True)
 
-    # Generate listing_id
+    # Generate listing_id (string)
     listing_id = uuid.uuid4().hex[:12]
 
-    # Profit calculation
-    profitpercent = Decimal("0.1")  # 10% profit
+    # Calculate profit
+    profitpercent = Decimal("0.1")
     price_decimal = Decimal(str(price))
     profit = profitpercent * price_decimal
     renting_price = price_decimal + profit
 
-    logging.info(f"Calculated profit={profit} renting_price={renting_price}")
-
     try:
-        # Insert listing
-        insert_listing = """
+        # 1️⃣ Insert listing with room_size and max_occupants
+        insert_listing_sql = """
             INSERT INTO listings_data (
                 listing_id, user_id, property_id, listing_name, listing_type,
                 listing_description, availability_status,
-                availability_date, timeline, price, renting_price, deposits
+                availability_date, timeline, price, renting_price, deposits,
+                room_size, max_occupants
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
-
         cursor.execute(
-            insert_listing,
+            insert_listing_sql,
             (
                 listing_id,
                 current_user_id,
@@ -114,30 +134,52 @@ def fetch_add_listing(current_user_id, role, *args, **kwargs):
                 timeline,
                 float(price_decimal),
                 float(renting_price),
-                deposits
+                deposits,
+                room_size,
+                max_occupants
             ),
         )
-        db.commit()
-        logging.info(f"Listing inserted successfully: {listing_id}")
 
-        # Insert images
-        insert_image = "INSERT INTO images (user_id, listing_id, image_url) VALUES (%s, %s, %s)"
+        # 2️⃣ Insert images
+        insert_image_sql = "INSERT INTO images (user_id, listing_id, image_url) VALUES (%s, %s, %s)"
         saved_files = []
-
         for image in images:
             filename = f"{uuid.uuid4().hex}_{image.filename}"
             image_path = os.path.join(upload_folder, filename)
             image.save(image_path)
-            cursor.execute(insert_image, (current_user_id, listing_id, filename))
+            cursor.execute(insert_image_sql, (current_user_id, listing_id, filename))
             saved_files.append(filename)
 
+        # 3️⃣ Insert amenities into listings_amenities
+        if amenities_keys:
+            # Fetch amenity IDs
+            format_strings = ",".join(["%s"] * len(amenities_keys))
+            cursor.execute(
+                f"SELECT id, amenity_key FROM amenities WHERE amenity_key IN ({format_strings})",
+                amenities_keys
+            )
+            rows = cursor.fetchall()
+            amenity_id_map = {row["amenity_key"]: row["id"] for row in rows}
+
+            insert_listing_amenity_sql = """
+                INSERT INTO listings_amenities (listing_id, amenity_id, available)
+                VALUES (%s, %s, 1)
+            """
+            for key in amenities_keys:
+                amenity_id = amenity_id_map.get(key)
+                if amenity_id:
+                    cursor.execute(insert_listing_amenity_sql, (listing_id, amenity_id))
+
+        # 4️⃣ Commit everything
         db.commit()
-        logging.info(f"Saved {len(saved_files)} images for listing {listing_id}")
 
         return jsonify({
             "message": "Listing added successfully",
             "listing_id": listing_id,
-            "images": saved_files
+            "images": saved_files,
+            "amenities": amenities_keys,
+            "room_size": room_size,
+            "max_occupants": max_occupants
         }), 201
 
     except Exception as e:
