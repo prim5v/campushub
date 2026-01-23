@@ -29,15 +29,8 @@ from ...modules.comrade.get_listings_module import fetch_listings
 from ...utils.jwt_setup import token_required, require_role
 
 @comrade.route("/get_listings", methods=['POST'])
-# @token_required
-# @require_role("comrade")
 @limiter.limit("10 per minute")
 def get_listings():
     data = request.json or request.form
     response = fetch_listings(data)  # call module function that handles DB
     return response
-
-# coordinates{
-#     "latitude": -1.2921,
-#     "longitude": 36.8219
-# }

@@ -91,7 +91,7 @@ def fetch_listings(data):
         cursor.execute(
             f"""
             SELECT *
-            FROM location_data
+            FROM Location_data
             WHERE listing_id IN ({format_strings})
             OR property_id IN ({property_strings})
             """,
