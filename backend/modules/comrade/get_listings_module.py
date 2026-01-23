@@ -76,7 +76,7 @@ def fetch_listings(data):
         format_strings = ",".join(["%s"] * len(listing_ids))
         property_strings = ",".join(["%s"] * len(property_ids))
 
-        # 2️⃣ Fetch all images
+       # 2️⃣ Fetch all images
         cursor.execute(
             f"SELECT listing_id, image_url FROM images WHERE listing_id IN ({format_strings})",
             listing_ids
@@ -84,8 +84,12 @@ def fetch_listings(data):
         images = cursor.fetchall()
 
         images_map = {}
+
+        base_url = request.host_url.rstrip("/")  # e.g. https://campushub.com
+
         for img in images:
-            images_map.setdefault(img["listing_id"], []).append(img["image_url"])
+            full_url = f"{base_url}/static/images/{img['image_url']}"
+            images_map.setdefault(img["listing_id"], []).append(full_url)
 
         # 3️⃣ Fetch all locations
         cursor.execute(
