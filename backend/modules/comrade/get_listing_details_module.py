@@ -30,7 +30,7 @@ import json
 from decimal import Decimal
 from datetime import datetime
 
-def fetch_listing_details(data):
+def fetch_listing_details(listing_id, data):
     """
     Expects:
     {
