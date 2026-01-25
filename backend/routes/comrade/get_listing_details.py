@@ -28,7 +28,7 @@ from ...utils.limiter import limiter
 from ...modules.comrade.get_listing_details_module import fetch_listing_details
 from ...utils.jwt_setup import token_required, require_role
 
-@comrade.route("/get_listing_details/<listing_id>", methods=['POST'])
+@comrade.route("/get_listing_details/<listing_id>", methods=['POST', 'GET'])
 # @token_required
 # @require_role("comrade")
 @limiter.limit("10 per minute")

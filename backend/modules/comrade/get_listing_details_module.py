@@ -39,7 +39,7 @@ def fetch_listing_details(listing_id, data):
     }
     """
 
-    listing_id = data.get("listing_id")
+    # listing_id = data.get("listing_id")
     coordinates = data.get("coordinates") or {}
     user_lat = coordinates.get("latitude")
     user_lon = coordinates.get("longitude")
