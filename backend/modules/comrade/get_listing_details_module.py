@@ -74,6 +74,9 @@ def fetch_listing_details(listing_id, data):
             ORDER BY uploaded_at ASC
         """, (listing_id,))
         images = [row["image_url"] for row in cursor.fetchall()]
+        base_url = request.host_url.rstrip("/")
+        images = [f"{base_url}/static/images/{img}" for img in images]
+
 
         # 3️⃣ Fetch landlord image
         cursor.execute("""
@@ -85,6 +88,8 @@ def fetch_listing_details(listing_id, data):
         """, (landlord_user_id,))
         landlord_img_row = cursor.fetchone()
         landlord_image = landlord_img_row["image_url"] if landlord_img_row else None
+        landlord_image = f"{base_url}/static/images/{landlord_image}" if landlord_image else None
+
 
         # 4️⃣ Fetch location (same logic as fetch_listings)
         cursor.execute("""
@@ -167,7 +172,7 @@ def fetch_listing_details(listing_id, data):
             reviews_list.append({
                 "id": r["id"],
                 "author": r.get("username") or "Anonymous",
-                "avatar": reviewer_img["image_url"] if reviewer_img else None,
+                "avatar": f"{base_url}/static/images/{reviewer_img['image_url']}" if reviewer_img else None,
                 "rating": int(r["rating"]),
                 "date": safe_iso(r.get("review_date"), fallback=None),
                 "comment": r["review_text"]
@@ -238,7 +243,7 @@ def fetch_listing_details(listing_id, data):
             "location": location_str,
             "distance": distance_str,
 
-            "size": l.get("room_size"),
+            "size": f"{l.get('room_size')} sqm" if l.get('room_size') else None,
             "maxOccupants": l.get("max_occupants"),
             "availableFrom": safe_iso(l.get("availability_date")),
             "images": images,
