@@ -25,7 +25,7 @@ import secrets
 
 
 from ...utils.db_connection import get_db
-from ...utils.extra_functions import haversine_distance
+from ...utils.extra_functions import haversine_distance, safe_iso
 import json
 from decimal import Decimal
 from datetime import datetime
@@ -169,7 +169,7 @@ def fetch_listing_details(listing_id, data):
                 "author": r.get("username") or "Anonymous",
                 "avatar": reviewer_img["image_url"] if reviewer_img else None,
                 "rating": int(r["rating"]),
-                "date": r["review_date"].isoformat() if r.get("review_date") else None,
+                "date": safe_iso(r.get("review_date"), fallback=None),
                 "comment": r["review_text"]
             })
 
@@ -213,7 +213,7 @@ def fetch_listing_details(listing_id, data):
             "image": landlord_image,
             "responseRate": "98%",           # fixed for now
             "responseTime": "within 2 hours",
-            "memberSince": str(landlord_user["created_at"].year) if landlord_user and landlord_user.get("created_at") else None,
+            "memberSince": safe_iso(landlord_user.get("created_at"), fallback=None),
             "properties": properties_count
         }
 
@@ -240,8 +240,7 @@ def fetch_listing_details(listing_id, data):
 
             "size": l.get("room_size"),
             "maxOccupants": l.get("max_occupants"),
-            "availableFrom": l["availability_date"].isoformat() if l.get("availability_date") else "Immediately",
-
+            "availableFrom": safe_iso(l.get("availability_date")),
             "images": images,
             "amenities": amenities,
 

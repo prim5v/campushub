@@ -268,3 +268,11 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
     return int(R * c)  # return meters (integer)
+
+
+def safe_iso(val, fallback="Immediately"):
+    if isinstance(val, (datetime, date)):
+        return val.isoformat()
+    elif val is None:
+        return fallback
+    return str(val)
