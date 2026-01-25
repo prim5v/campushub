@@ -270,9 +270,12 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     return int(R * c)  # return meters (integer)
 
 
-def safe_iso(val, fallback="Immediately"):
-    if isinstance(val, (datetime, date)):
-        return val.isoformat()
-    elif val is None:
+def safe_iso(dt, fallback="Immediately"):
+    if not dt or str(dt).startswith("0000"):
         return fallback
-    return str(val)
+    if isinstance(dt, str):
+        try:
+            dt = datetime.fromisoformat(dt)
+        except:
+            return fallback
+    return dt.isoformat()
