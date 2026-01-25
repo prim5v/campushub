@@ -28,10 +28,11 @@ from ...utils.limiter import limiter
 from ...modules.comrade.get_listing_details_module import fetch_listing_details
 from ...utils.jwt_setup import token_required, require_role
 
-@comrade.route("/get_listing_details/<listing_id>", methods=['GET'])
-@token_required
-@require_role("comrade")
+@comrade.route("/get_listing_details/<listing_id>", methods=['POST'])
+# @token_required
+# @require_role("comrade")
 @limiter.limit("10 per minute")
-def get_listing_details(current_user_id, role, listing_id):
-    response = fetch_listing_details(current_user_id, role, listing_id)  # call module function that handles DB
+def get_listing_details(listing_id):
+    data = request.json or request.form
+    response = fetch_listing_details(listing_id, data)  # call module function that handles DB
     return response
