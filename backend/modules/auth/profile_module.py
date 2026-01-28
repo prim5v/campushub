@@ -35,9 +35,34 @@ def check_profile(current_user_id, role):
         conn = get_db()
         print("[DEBUG] Database connection established")
 
-        with conn.cursor() as cursor:
-            query = "SELECT * FROM Users WHERE user_id = %s"
-            print(f"[DEBUG] Executing query: {query} with user_id={current_user_id}")
+        with conn.cursor(pymysql.cursors.DictCursor) as cursor:
+
+            query = """
+                SELECT 
+                    u.user_id,
+                    u.username,
+                    u.email,
+                    u.phone,
+                    u.role,
+                    u.plan,
+                    u.is_active,
+                    u.created_at,
+
+                    s.id_number,
+                    s.full_name,
+                    s.check_type,
+                    s.status AS verification_status,
+                    s.reviewed_by,
+                    s.review_notes,
+                    s.performed_at AS verification_date
+
+                FROM users u
+                LEFT JOIN security_checks s ON u.user_id = s.user_id
+                WHERE u.user_id = %s
+                LIMIT 1
+            """
+
+            print(f"[DEBUG] Executing profile join query for user_id={current_user_id}")
             cursor.execute(query, (current_user_id,))
             user = cursor.fetchone()
 
@@ -45,22 +70,46 @@ def check_profile(current_user_id, role):
 
             if not user:
                 print("[DEBUG] User not found — returning default student role")
-                # Return a default student role instead of 404
+
                 return jsonify({
-                    "message": "Access granted", 
+                    "message": "Access granted",
                     "user": {
-                        "id": current_user_id,
+                        "user_id": current_user_id,
                         "email": "unknown@student.com",
                         "role": "student",
-                        "name": "Default Student",
-                        "created_at": None
+                        "username": "Default Student",
+                        "created_at": None,
+                        "verification": None
                     }
                 }), 200
 
-            print("[DEBUG] User found, returning success response")
+            # Build clean profile object
+            profile = {
+                "user_id": user["user_id"],
+                "username": user["username"],
+                "email": user["email"],
+                "phone": user["phone"],
+                "role": user["role"],
+                "plan": user["plan"],
+                "is_active": bool(user["is_active"]),
+                "created_at": user["created_at"],
+
+                "verification": {
+                    "id_number": user["id_number"],
+                    "full_name": user["full_name"],
+                    "check_type": user["check_type"],
+                    "status": user["verification_status"],
+                    "reviewed_by": user["reviewed_by"],
+                    "review_notes": user["review_notes"],
+                    "performed_at": user["verification_date"],
+                }
+            }
+
+            print("[DEBUG] Returning full merged profile")
+
             return jsonify({
                 "message": "Access granted",
-                "user": user
+                "user": profile
             }), 200
 
     except Exception as e:
