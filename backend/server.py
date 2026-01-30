@@ -69,12 +69,14 @@ from backend.routes.admin import admin
 from backend.routes.landlord import landlord
 from backend.routes.comrade import comrade
 from backend .routes.mpesaPaymentGetways import mpesaPaymentGetways
+from backend.routes.AI import ai_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(admin)
 app.register_blueprint(landlord)
 app.register_blueprint(comrade)
 app.register_blueprint(mpesaPaymentGetways)
+app.register_blueprint(ai_bp)
 
 
 # ================= LOGGING =================

@@ -22,18 +22,21 @@ from flask import make_response
 import user_agents
 import hashlib
 import secrets
+import os
+import json
+from ...utils.email_setup import mail   
+from ...utils.db_connection import get_db
+from ...utils.jwt_setup import generate_jwt
+import bcrypt, uuid
+from datetime import datetime, timedelta
+from ...utils.extra_functions import (generate_otp, send_security_email, send_informational_email, get_device_info)
+from ...utils.gemini_setup import client, respond_to_prompt_only  # Gemini client setup
 
-from ...modules.auth.profile_module import check_profile
-from ...utils.jwt_setup import token_required, require_role
-from ...utils.limiter import limiter
-from . import auth_bp  # your blueprint
+def perform_chat(data):
+    prompt = data.get("prompt")
+    username = "Barack Obama"  # Example static username
+    if not prompt:
+        return jsonify({"error": "Prompt is required"}), 400
 
-# route to get users info when using token
-#this route is called when the app loads to determine the logged in user's screen since the app will have different screens based on role
-@auth_bp.route("/profile", methods=["GET"])
-# @token_required
-@require_role(("comrade", "admin", "landlord"))  # roles allowed to access
-@limiter.limit("20 per minute")  # still light protection
-def profile(current_user_id, role):
-    response = check_profile(current_user_id, role)  # call module function that handles DB + JWT
-    return response
+    response = respond_to_prompt_only(prompt, username)
+    return jsonify({"response": response})

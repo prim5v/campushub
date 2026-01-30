@@ -22,18 +22,16 @@ from flask import make_response
 import user_agents
 import hashlib
 import secrets
-
-from ...modules.auth.profile_module import check_profile
-from ...utils.jwt_setup import token_required, require_role
+import os
+import json
 from ...utils.limiter import limiter
-from . import auth_bp  # your blueprint
+from . import ai_bp  # your blueprint
+from ...modules.AI.chat_module import perform_chat  # import function from your module
 
-# route to get users info when using token
-#this route is called when the app loads to determine the logged in user's screen since the app will have different screens based on role
-@auth_bp.route("/profile", methods=["GET"])
-# @token_required
-@require_role(("comrade", "admin", "landlord"))  # roles allowed to access
-@limiter.limit("20 per minute")  # still light protection
-def profile(current_user_id, role):
-    response = check_profile(current_user_id, role)  # call module function that handles DB + JWT
+@ai_bp.route("/chat", methods=["POST"])
+@limiter.limit("10 per minute")  # limit to 10 requests per minute
+def chat():
+    data = request.json
+    response = perform_chat(data)  # call module function that handles chat
     return response
+    # return {"message": "AI chat endpoint is under construction."}
