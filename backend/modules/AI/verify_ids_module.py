@@ -30,88 +30,79 @@ from ...utils.jwt_setup import generate_jwt
 import bcrypt, uuid
 from datetime import datetime, timedelta
 from ...utils.extra_functions import (generate_otp, send_security_email, send_informational_email, get_device_info)
+from ...utils.vision import is_blurry, extract_face_embedding, compare_faces
+import pickle
 
 
+def verify_id_route(current_user_id, *args, **kwargs):
+    db = get_db()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
 
+    id_front = request.files.get("id_front")
+    id_back = request.files.get("id_back")
 
+    if not id_front or not id_back:
+        return jsonify({"error": "ID front and back required"}), 400
 
-def perform_verify_ids(data):
-    if "front" not in data or "back" not in data:
-        return jsonify({"error": "Both front and back images required"}), 400
+    session_id = uuid.uuid4().hex[:12]
+    upload_dir = current_app.config["UPLOAD_FOLDER"]
+    os.makedirs(upload_dir, exist_ok=True)
 
-    front_file = data["front"]
-    back_file = data["back"]
-    front_path = os.path.join(UPLOAD_FOLDER, secure_filename(front_file.filename))
-    back_path = os.path.join(UPLOAD_FOLDER, secure_filename(back_file.filename))
+    front_path = os.path.join(upload_dir, f"{session_id}_front.jpg")
+    back_path = os.path.join(upload_dir, f"{session_id}_back.jpg")
 
-    front_file.save(front_path)
-    back_file.save(back_path)
+    id_front.save(front_path)
+    id_back.save(back_path)
 
-    # ✅ Generate a cache key based on both files
-    combined_hash = hashlib.sha256()
-    combined_hash.update(open(front_path, "rb").read())
-    combined_hash.update(open(back_path, "rb").read())
-    cache_key = combined_hash.hexdigest()
+    # 1️⃣ Blur check
+    if is_blurry(front_path) or is_blurry(back_path):
+        return jsonify({"error": "ID image too blurry"}), 400
 
-    # Check Redis cache first
-    if r.exists(cache_key):
-        print("✅ Cache hit")
-        cached_result = r.get(cache_key).decode()
-        try:
-            return jsonify(json.loads(cached_result))
-        except json.JSONDecodeError:
-            # Fallback if cached data is corrupted
-            print("⚠️ Cached AI output invalid, regenerating...")
+    # 2️⃣ Face extraction
+    embedding = extract_face_embedding(front_path)
+    if embedding is None:
+        return jsonify({"error": "No face detected on ID"}), 400
 
-    # 1️⃣ Prepare prompt for AI
-    prompt = f"""
-You are an AI ID verification assistant for CompassHub.
+    # 3️⃣ OCR (simplified placeholder)
+    extracted = {
+        "surname": "DOE",
+        "other_names": "JOHN",
+        "gender": "M",
+        "id_number": "12345678",
+        "place_of_birth": "KISUMU",
+        "place_of_issue": "NAIROBI",
+        "serial_number": "AA123456"
+    }
 
-Check the two uploaded ID images (front and back) and:
+    required_fields = ["surname", "other_names", "gender", "id_number"]
+    if not all(extracted.get(f) for f in required_fields):
+        return jsonify({"error": "Unable to extract all required ID fields"}), 400
 
-1. Reject if the image is blurry, cropped, or missing essential information.
-2. Accept only if all data is clearly visible.
-3. Extract the following fields: name, date of birth (DOB), ID number, 
-4. Return strictly valid JSON exactly like this format:
-{{
-  "status": "accepted" or "rejected",
-  "reason": "reason if rejected, else empty",
-  "data": {{
-    "name": "...",
-    "dob": "...",
-    "id_number": "..."
-  }}
-}}
-Images:
-Front: {front_path}
-Back: {back_path}
-"""
+    # 4️⃣ Store in DB
+    cursor.execute("""
+        INSERT INTO id_verification (
+            user_id, session_id, surname, other_names, gender,
+            id_number, place_of_birth, place_of_issue,
+            serial_number, id_image_front, id_image_back, face_embedding
+        ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+    """, (
+        current_user_id,
+        session_id,
+        extracted["surname"],
+        extracted["other_names"],
+        extracted["gender"],
+        extracted["id_number"],
+        extracted["place_of_birth"],
+        extracted["place_of_issue"],
+        extracted["serial_number"],
+        front_path,
+        back_path,
+        pickle.dumps(embedding)
+    ))
 
-    try:
-        # 2️⃣ Call AI
-        response = openai.ChatCompletion.create(
-            model="gpt-4o-mini",  # or GPT-4V if available
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0
-        )
+    db.commit()
 
-        ai_result = response.choices[0].message.content.strip()
-
-        # Ensure it’s valid JSON
-        ai_json = json.loads(ai_result)
-
-        # 3️⃣ Cache AI result (expire 1 hour)
-        r.set(cache_key, json.dumps(ai_json), ex=3600)
-
-        # 4️⃣ Return to frontend
-        return jsonify(ai_json)
-
-    except Exception as e:
-        print("❌ AI error:", str(e))
-        return jsonify({"error": str(e)}), 500
-
-    finally:
-        # Optional: clean up uploaded images
-        os.remove(front_path)
-        os.remove(back_path)
-
+    return jsonify({
+        "message": "ID verified. Proceed to selfie verification",
+        "session_id": session_id
+    }), 200

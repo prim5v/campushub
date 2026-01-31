@@ -25,13 +25,15 @@ import secrets
 
 from . import ai_bp  # your blueprint
 from flask import request, jsonify
-from ...modules.AI.verify_ids_module import perform_verify_ids  # import function from your module
+from ...modules.AI.verify_ids_module import verify_id_route  # import function from your module
+from ...utils.jwt_setup import token_required, require_role
 from ...utils.limiter import limiter
 
 @ai_bp.route("/verify_ids", methods=["POST"])
+@token_required
+@require_role("landlord")
 @limiter.limit("5 per minute")  # limit to 5 requests per minute
-def verify_ids():
-    data = request.files
-    response = perform_verify_ids(data)  # call module function that handles ID verification
+def verify_ids( current_user_id, role, *args, **kwargs):
+    response = verify_id_route(current_user_id, role, *args, **kwargs)  # call module function that handles ID verification
     return response
     # return {"message": "ID verification endpoint is under construction."}
