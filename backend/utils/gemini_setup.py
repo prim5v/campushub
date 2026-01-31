@@ -29,4 +29,4 @@ def respond_to_prompt_only(prompt, username):
 
     except Exception as e:
         print("❌ Gemini API error:", str(e))
-        return "Sorry, there was an error processing your request."
+        return "Sorry, there was an error processing your request.", str(e)
