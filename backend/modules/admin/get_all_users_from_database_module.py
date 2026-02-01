@@ -61,7 +61,7 @@ def fetch_all_users():
                 ON sc.user_id = u.user_id
             LEFT JOIN images img
                 ON img.user_id = u.user_id
-                AND img.sales_id IS NULL
+                AND img.listing_id IS NULL
         """
 
         cursor.execute(users_sql)

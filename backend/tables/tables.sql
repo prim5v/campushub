@@ -53,6 +53,7 @@ Create table if not exists images (
     id SERIAL PRIMARY KEY,
     user_id VARCHAR(50) NULL,
     tenant_id VARCHAR(50) NULL,
+    session_id VARCHAR(50) NULL,
     listing_id VARCHAR(50) NULL,
     property_id VARCHAR(50) NULL,
     product_id VARCHAR(50) NULL,
@@ -60,6 +61,14 @@ Create table if not exists images (
     image_url VARCHAR(255) NOT NULL,
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE verification (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id VARCHAR(50),
+    session_id VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 
 CREATE TABLE IF NOT EXISTS email_otp (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -407,3 +416,4 @@ CREATE TABLE pending_landlord_signups (
     UNIQUE KEY uniq_checkout (checkout_request_id),
     UNIQUE KEY uniq_email (email)
 );
+

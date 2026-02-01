@@ -29,9 +29,9 @@ from ...utils.db_connection import get_db
 from ...utils.jwt_setup import generate_jwt
 import bcrypt, uuid
 from datetime import datetime, timedelta
-from ...utils.extra_functions import (generate_otp, send_security_email, send_informational_email, get_device_info)
-from ...utils.vision import is_blurry, extract_face_embedding, compare_faces
-import pickle
+# from ...utils.extra_functions import (generate_otp, send_security_email, send_informational_email, get_device_info)
+# from ...utils.vision import is_blurry, extract_face_embedding, compare_faces
+# import pickle
 
 
 
@@ -46,7 +46,7 @@ def verify_selfie_route(current_user_id, *args, **kwargs):
         return jsonify({"error": "Missing session_id or selfie"}), 400
 
     cursor.execute(
-        "SELECT * FROM id_verification WHERE session_id=%s AND user_id=%s",
+        "SELECT * FROM verification WHERE session_id=%s AND user_id=%s",
         (session_id, current_user_id)
     )
     record = cursor.fetchone()
@@ -59,28 +59,11 @@ def verify_selfie_route(current_user_id, *args, **kwargs):
         f"{session_id}_selfie.jpg"
     )
     selfie.save(selfie_path)
-
-    if is_blurry(selfie_path):
-        return jsonify({"error": "Selfie too blurry"}), 400
-
-    selfie_embedding = extract_face_embedding(selfie_path)
-    if selfie_embedding is None:
-        return jsonify({"error": "No face detected in selfie"}), 400
-
-    id_embedding = pickle.loads(record["face_embedding"])
-    similarity = compare_faces(id_embedding, selfie_embedding)
-
-    if similarity >= 0.90:
-        return jsonify({
-            "message": "Identity verified successfully",
-            "similarity": round(similarity, 3)
-        }), 200
-
-    # ❌ Failed — cleanup
-    cursor.execute("DELETE FROM id_verification WHERE session_id=%s", (session_id,))
+    # insert into image table
+    cursor.execute("""
+        INSERT INTO images (user_id, session_id, image_url)
+        VALUES (%s, %s, %s)
+    """, (current_user_id, session_id, selfie_path))    
     db.commit()
 
-    return jsonify({
-        "error": "Face mismatch",
-        "similarity": round(similarity, 3)
-    }), 403
+    return jsonify({"message": "Selfie submitted successfully"}), 200

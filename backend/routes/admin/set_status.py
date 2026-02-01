@@ -23,17 +23,16 @@ import user_agents
 import hashlib
 import secrets
 
-
 from . import admin  # your blueprint
 from ...utils.limiter import limiter
-from ...modules.admin.get_all_users_from_database_module import fetch_all_users
+from ...modules.admin.set_status_module import set_user_status
 from ...utils.jwt_setup import token_required, require_role
 
 
-@admin.route("/get_all_users", methods=["GET"])
-# @token_required
+@admin.route("/set_status", methods=["POST"])
+# @token_required 
 # @require_role("admin")
-@limiter.limit("10 per minute")  # moderate protection
-def get_all_users():
-    response = fetch_all_users()  # call module function that handles DB
+@limiter.limit("5 per minute")  # stricter limit for sensitive action
+def set_status():
+    response = set_user_status()
     return response

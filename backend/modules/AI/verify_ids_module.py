@@ -30,8 +30,8 @@ from ...utils.jwt_setup import generate_jwt
 import bcrypt, uuid
 from datetime import datetime, timedelta
 from ...utils.extra_functions import (generate_otp, send_security_email, send_informational_email, get_device_info)
-from ...utils.vision import is_blurry, extract_face_embedding, compare_faces
-import pickle
+# from ...utils.vision import is_blurry, extract_face_embedding, compare_faces
+# import pickle
 
 
 def verify_id_route(current_user_id, *args, **kwargs):
@@ -53,52 +53,20 @@ def verify_id_route(current_user_id, *args, **kwargs):
 
     id_front.save(front_path)
     id_back.save(back_path)
-
-    # 1️⃣ Blur check
-    if is_blurry(front_path) or is_blurry(back_path):
-        return jsonify({"error": "ID image too blurry"}), 400
-
-    # 2️⃣ Face extraction
-    embedding = extract_face_embedding(front_path)
-    if embedding is None:
-        return jsonify({"error": "No face detected on ID"}), 400
-
-    # 3️⃣ OCR (simplified placeholder)
-    extracted = {
-        "surname": "DOE",
-        "other_names": "JOHN",
-        "gender": "M",
-        "id_number": "12345678",
-        "place_of_birth": "KISUMU",
-        "place_of_issue": "NAIROBI",
-        "serial_number": "AA123456"
-    }
-
-    required_fields = ["surname", "other_names", "gender", "id_number"]
-    if not all(extracted.get(f) for f in required_fields):
-        return jsonify({"error": "Unable to extract all required ID fields"}), 400
-
-    # 4️⃣ Store in DB
+    # Store verification record
     cursor.execute("""
-        INSERT INTO id_verification (
-            user_id, session_id, surname, other_names, gender,
-            id_number, place_of_birth, place_of_issue,
-            serial_number, id_image_front, id_image_back, face_embedding
-        ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-    """, (
-        current_user_id,
-        session_id,
-        extracted["surname"],
-        extracted["other_names"],
-        extracted["gender"],
-        extracted["id_number"],
-        extracted["place_of_birth"],
-        extracted["place_of_issue"],
-        extracted["serial_number"],
-        front_path,
-        back_path,
-        pickle.dumps(embedding)
-    ))
+        INSERT INTO verification (user_id, session_id)
+        VALUES (%s, %s, %s, %s)
+    """, (current_user_id, session_id))
+    # insert into image table
+    cursor.execute("""
+        INSERT INTO images (user_id, session_id, image_url)
+        VALUES (%s, %s, %s)
+    """, (current_user_id, session_id, front_path))
+    cursor.execute("""
+        INSERT INTO images (user_id, session_id, image_url)
+        VALUES (%s, %s, %s)
+    """, (current_user_id, session_id, back_path))
 
     db.commit()
 
