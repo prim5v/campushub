@@ -46,8 +46,8 @@ def set_user_status():
     is_active = int(is_active)
 
     # prevent admin from disabling self
-    if user_id == g.user["user_id"]:
-        return jsonify({"error": "You cannot change your own account status"}), 400
+    # if user_id == g.user["user_id"]:
+    #     return jsonify({"error": "You cannot change your own account status"}), 400
 
     conn = get_db()
     cursor = conn.cursor()

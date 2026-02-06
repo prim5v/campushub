@@ -160,11 +160,11 @@ def perform_verify_otp(data):
             ))
             conn.commit()
 
-            # insert user_id in security_checks table 
+            # insert user_id and statusin security_checks table 
             cursor.execute("""
-                INSERT INTO security_checks (user_id)
-                VALUES (%s)
-            """, (user_id,))
+                INSERT INTO security_checks (user_id, status) 
+                VALUES (%s, %s)
+            """, (user_id, "unverified"))
             conn.commit()
 
                     # get user status
