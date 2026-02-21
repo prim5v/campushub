@@ -72,9 +72,9 @@ def fetch_recent_system_activity():
 
         # ---------------- TRANSACTIONS ----------------
         cursor.execute("""
-            SELECT user_id, amount, created_at
+            SELECT user_id, amount, transaction_date
             FROM transactions
-            ORDER BY created_at DESC
+            ORDER BY transaction_date DESC
             LIMIT 10
         """)
         txs = cursor.fetchall()
@@ -85,7 +85,7 @@ def fetch_recent_system_activity():
                 "title": "Payment Processed",
                 "description": f"Payment of {float(t['amount'])}",
                 "user_id": t["user_id"],
-                "timestamp": t["created_at"]
+                "timestamp": t["transaction_date"]
             })
 
         # ---------------- VERIFICATIONS ----------------
