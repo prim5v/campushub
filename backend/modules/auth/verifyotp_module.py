@@ -116,7 +116,7 @@ def perform_verify_otp(data):
                     body = f"""
                     Hello {record['username']},
 
-                    Thank you for signing up as a {record['role']}. 
+                    Thank you for signing up as a {record['role']}.
                     To complete your registration, please fill out this questionnaire:
 
                     {form_link}
@@ -125,7 +125,8 @@ def perform_verify_otp(data):
                     CampusHub Team
                     """
                     msg = Message(subject, recipients=[record["email"]], body=body)
-                    mail.send(msg)
+                    # dont send this email on sign up
+                    # mail.send(msg)
                     print(f"✅ Questionnaire email sent to {record['email']} for role {record['role']}")
                 except Exception as e:
                     print(f"❌ Failed to send questionnaire email: {e}")
@@ -160,11 +161,13 @@ def perform_verify_otp(data):
             ))
             conn.commit()
 
-            # insert user_id and statusin security_checks table 
+
+            # insert user_id and statusin security_checks table
             cursor.execute("""
-                INSERT INTO security_checks (user_id, status) 
-                VALUES (%s, %s)
-            """, (user_id, "unverified"))
+                INSERT INTO security_checks (user_id, status, check_type)
+                VALUES (%s, %s, %s)
+            """, (user_id, "verified", record["role"]))
+            # overide verification
             conn.commit()
 
                     # get user status
@@ -220,3 +223,5 @@ def perform_verify_otp(data):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+# new code

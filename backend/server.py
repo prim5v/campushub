@@ -43,6 +43,7 @@ CORS(
     supports_credentials=True,
     resources={r"/*": {
         "origins": [
+            "http://localhost:3000",
             "http://localhost:5173",
             "https://campushub-website.vercel.app"
         ]
@@ -92,6 +93,7 @@ logging.info("Flask application started successfully.")
 def index():
     return "Am Backend and am up and running"
 
+# https://campushub4293.pythonanywhere.com/test-email
 @app.route("/test-email")
 def test_email():
     msg = Message(
@@ -116,3 +118,6 @@ if __name__ == "__main__":
     )
 
 
+
+# source campushub-venv/bin/activate
+# pip install psutil
