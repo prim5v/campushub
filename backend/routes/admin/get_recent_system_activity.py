@@ -32,5 +32,5 @@ from . import admin
 # put decorators later
 @admin.route("/get_recent_system_activity", methods=['POST', 'GET'])
 def get_recent():
-    response = fetch_recent_system_activity
+    response = fetch_recent_system_activity()
     return response
