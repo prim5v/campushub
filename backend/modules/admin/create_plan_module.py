@@ -23,19 +23,26 @@ import hashlib
 import secrets
 
 
-from ...utils.db_connection import get_db
+# from ...utils.db_connection import get_db
 
-import logging
+# import logging
 
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
+
 
 import json
+import logging
+from flask import jsonify
+from ...utils.db_connection import get_db
+
+logger = logging.getLogger(__name__)
 
 def create_plan(data):
     try:
         logger.info("📦 Create plan request received")
 
+        # Extract fields from payload
         name = data.get("name")
         price = data.get("price")
         period = data.get("period")
@@ -46,13 +53,24 @@ def create_plan(data):
         properties_limit = data.get("properties_limit", 1)
         listings_limit = data.get("listings_limit", 1)
 
+        # Validation
         if not name or price is None or not period or not features or not not_included:
             logger.warning("❌ Missing required plan fields")
             return jsonify({"error": "missing required fields"}), 400
 
+        # Normalize strings to lists if needed
+        if isinstance(features, str):
+            features = [f.strip() for f in features.split(",") if f.strip()]
+        if isinstance(not_included, str):
+            not_included = [f.strip() for f in not_included.split(",") if f.strip()]
+
+        # Serialize to JSON for MySQL
+        features_json = json.dumps(features)
+        not_included_json = json.dumps(not_included)
+
+        # Insert into database
         conn = get_db()
         cursor = conn.cursor()
-
         logger.info(f"🧾 Inserting plan: {name}")
 
         cursor.execute("""
@@ -64,15 +82,14 @@ def create_plan(data):
             price,
             period,
             description,
-            json.dumps(features),      # <-- convert list to JSON string
-            json.dumps(not_included),  # <-- convert list to JSON string
+            features_json,
+            not_included_json,
             popular,
             properties_limit,
             listings_limit
         ))
 
         conn.commit()
-
         plan_id = cursor.lastrowid
         logger.info(f"✅ Plan created successfully. ID={plan_id}, name={name}")
 
