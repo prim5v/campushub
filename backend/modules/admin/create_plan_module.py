@@ -30,6 +30,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+import json
+
 def create_plan(data):
     try:
         logger.info("📦 Create plan request received")
@@ -38,8 +40,8 @@ def create_plan(data):
         price = data.get("price")
         period = data.get("period")
         description = data.get("description")
-        features = data.get("features")
-        not_included = data.get("not_included")
+        features = data.get("features") or []
+        not_included = data.get("not_included") or []
         popular = data.get("popular", 0)
         properties_limit = data.get("properties_limit", 1)
         listings_limit = data.get("listings_limit", 1)
@@ -62,8 +64,8 @@ def create_plan(data):
             price,
             period,
             description,
-            features,
-            not_included,
+            json.dumps(features),      # <-- convert list to JSON string
+            json.dumps(not_included),  # <-- convert list to JSON string
             popular,
             properties_limit,
             listings_limit
