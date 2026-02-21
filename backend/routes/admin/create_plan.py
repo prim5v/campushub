@@ -31,5 +31,6 @@ from ...modules.admin.create_plan_module import create_plan
 @admin.route("/create_plan", methods=['POST', 'GET'])
 @limiter.limit("10 per minute")
 def build_plan():
-    response = create_plan()
+    data = request.get_json()
+    response = create_plan(data)
     return response
