@@ -28,7 +28,7 @@ from . import admin  # your blueprint
 from ...utils.limiter import limiter
 from ...modules.admin.edit_listing_module import edit_listing
 
-@admin.route("/edit_listing<listing_id>", methods=['POST', 'GET', 'DELETE', 'PUT'])
+@admin.route("/edit_listing/<listing_id>", methods=['POST', 'GET', 'DELETE', 'PUT'])
 @limiter.limit("10 per minute")
 def fetch_edit_listing(listing_id):
     data = request.get_json()
