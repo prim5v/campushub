@@ -29,7 +29,7 @@ from ...utils.limiter import limiter
 # reuse func
 from ...modules.admin.edit_plan_module import update_plan
 
-@admin.route("/edit_plan/<int:plan_id>", methods=['POST', 'GET'])
+@admin.route("/edit_plan/<int:plan_id>", methods=['POST', 'GET', 'PUT'])
 @limiter.limit("10 per minute")
 def edit_plan(plan_id):
     data = request.get_json()
