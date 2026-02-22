@@ -29,7 +29,7 @@ from ...utils.limiter import limiter
 # reuse func
 from ...modules.admin.delete_plan_module import delete_plan
 
-@admin.route("/delete_plan/<int:plan_id>", methods=['POST', 'GET'])
+@admin.route("/delete_plan/<int:plan_id>", methods=['POST', 'GET', 'DELETE'])
 @limiter.limit("10 per minute")
 def remove_plan(plan_id):
     response = delete_plan(plan_id)
