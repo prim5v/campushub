@@ -28,7 +28,7 @@ from . import admin  # your blueprint
 from ...utils.limiter import limiter
 from ...modules.admin.fetch_listings_module import get_listings
 
-@admin.route("/delete_listing", methods=['POST', 'GET', 'DELETE'])
+@admin.route("/get_listings", methods=['POST', 'GET', 'DELETE'])
 @limiter.limit("10 per minute")
 def fetch_listings():
     response = get_listings()
