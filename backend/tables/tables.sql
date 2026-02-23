@@ -430,3 +430,9 @@ CREATE TABLE pending_landlord_signups (
     UNIQUE KEY uniq_email (email)
 );
 
+CREATE TABLE system_maintenance (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    is_active BOOLEAN NOT NULL DEFAULT FALSE,
+    message VARCHAR(255) DEFAULT 'The system is currently under maintenance. Please check back later.',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
