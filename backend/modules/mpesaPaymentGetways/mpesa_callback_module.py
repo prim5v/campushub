@@ -115,7 +115,7 @@ def handle_mpesa_transaction_callback(data):
         cursor.execute("""
             UPDATE transactions
             SET
-                status = 'completed',
+                status = 'success',
                 mpesa_code = %s,
                 amount = %s
             WHERE checkout_request_id = %s
