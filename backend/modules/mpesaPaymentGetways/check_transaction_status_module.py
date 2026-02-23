@@ -88,6 +88,13 @@ def check_transaction_status(checkout_id):
         # Completed
         # ===============================
         if status == "success":
+            cursor.execute("""
+                UPDATE bookings
+                SET payment_status = 'paid'
+                WHERE user_id = %s AND payment_status = 'pending'
+            """, (row["user_id"],))
+            db.commit()
+            
             return jsonify({
                 "status": "success",
                 "message": "Payment successful",

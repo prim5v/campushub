@@ -42,6 +42,18 @@ def make_request(current_user_id, role, *args, **kwargs):
     cursor = conn.cursor()
 
     try:
+        # Check if a request for this listing by this user already exists
+        cursor.execute("""
+            SELECT 1 FROM requests
+            WHERE listing_id = %s AND user_id = %s
+            LIMIT 1
+        """, (listing_id, current_user_id))
+        exists = cursor.fetchone()
+
+        if exists:
+            return jsonify({"error": "You have already requested this listing. Please be patient as the agents will attend to you"}), 409
+
+
         cursor.execute("""
             INSERT INTO requests (request_id, listing_id, user_id, phone_number, full_name)
             VALUES (%s, %s, %s, %s, %s)
