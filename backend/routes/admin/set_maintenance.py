@@ -29,7 +29,7 @@ from ...utils.db_connection import get_db
 
 
 
-admin.route("/set_system_maintenance", methods=["PUT", "POST"])
+@admin.route("/set_system_maintenance", methods=["PUT", "POST"])
 @limiter.limit("10 per minute")
 def set_maintenance():
     """
