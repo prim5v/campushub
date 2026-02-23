@@ -24,12 +24,12 @@ import hashlib
 
 from . import mpesaPaymentGetways
 from ...utils.limiter import limiter
-from ...modules.mpesaPaymentGetways.mpesa_landlord_signup_callback_module import handle_mpesa_landlord_signup_callback
-from ...utils.jwt_setup import token_required, require_role
+from ...modules.mpesaPaymentGetways.check_transaction_status_module import check_transaction_status
 
-@mpesaPaymentGetways.route("/mpesa_landlord_signup_callback", methods=['POST'])
+@mpesaPaymentGetways.route("/check_transaction_status", methods=['POST', 'GET'])
 @limiter.limit("3 per minute")
-def mpesa_landlord_signup_callback():
+def callback():
     data = request.get_json(silent=True) or {}
-    response = handle_mpesa_landlord_signup_callback(data)  # call module function that handles DB
+    checkout_id = data.get("checkout_id")
+    response = check_transaction_status(checkout_id)
     return response

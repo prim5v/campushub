@@ -332,14 +332,27 @@ Create table if not exists e_earnings(
     source VARCHAR(100) NOT NULL
 );
 
-Create table if not exists bookings(
+CREATE TABLE IF NOT EXISTS bookings (
     id SERIAL PRIMARY KEY,
     booking_id VARCHAR(50) UNIQUE NOT NULL,
     listing_id VARCHAR(50) REFERENCES listings_data(listing_id) ON DELETE CASCADE,
     user_id VARCHAR(50) REFERENCES users(user_id) ON DELETE CASCADE,
-    booked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status enum ('pending', 'confirmed', 'cancelled') NOT NULL
-)
+    phone_number VARCHAR(50) NOT NULL,
+    amount INT NOT NULL,
+    payment_status VARCHAR(50) NOT NULL,
+    booking_status VARCHAR(50) NOT NULL,
+    booked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS requests (
+    id SERIAL PRIMARY KEY,
+    request_id VARCHAR(50) UNIQUE NOT NULL,
+    listing_id VARCHAR(50) REFERENCES listings_data(listing_id) ON DELETE CASCADE,
+    user_id VARCHAR(50) REFERENCES users(user_id) ON DELETE CASCADE,
+    phone_number VARCHAR(50) NOT NULL,
+    full_name VARCHAR(50) NOT NULL,
+    requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 Create table if not exists tenants_data(
     id SERIAL PRIMARY KEY,

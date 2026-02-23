@@ -21,15 +21,15 @@ from google import genai  # ✅ correct for google-genai>=1.0.0
 from flask import make_response
 import user_agents
 import hashlib
+import secrets
 
-from . import mpesaPaymentGetways
+
+from . import admin  # your blueprint
 from ...utils.limiter import limiter
-from ...modules.mpesaPaymentGetways.mpesa_landlord_signup_callback_module import handle_mpesa_landlord_signup_callback
-from ...utils.jwt_setup import token_required, require_role
+from ...modules.admin.book_module import make_booking
 
-@mpesaPaymentGetways.route("/mpesa_landlord_signup_callback", methods=['POST'])
-@limiter.limit("3 per minute")
-def mpesa_landlord_signup_callback():
-    data = request.get_json(silent=True) or {}
-    response = handle_mpesa_landlord_signup_callback(data)  # call module function that handles DB
+@admin.route("/book_listing", methods=['POST', 'GET', 'DELETE'])
+@limiter.limit("10 per minute")
+def book_listing():
+    response = make_booking()
     return response

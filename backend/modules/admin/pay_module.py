@@ -21,15 +21,18 @@ from google import genai  # ✅ correct for google-genai>=1.0.0
 from flask import make_response
 import user_agents
 import hashlib
+import psutil
+import secrets
 
-from . import mpesaPaymentGetways
-from ...utils.limiter import limiter
-from ...modules.mpesaPaymentGetways.mpesa_landlord_signup_callback_module import handle_mpesa_landlord_signup_callback
-from ...utils.jwt_setup import token_required, require_role
+from flask import jsonify
+from ...utils.db_connection import get_db
+from ...utils.paymentGateways import trigger_mpesa_stk
 
-@mpesaPaymentGetways.route("/mpesa_landlord_signup_callback", methods=['POST'])
-@limiter.limit("3 per minute")
-def mpesa_landlord_signup_callback():
-    data = request.get_json(silent=True) or {}
-    response = handle_mpesa_landlord_signup_callback(data)  # call module function that handles DB
-    return response
+def make_payment():
+    data = request.get_json() or request.form
+    phone = data.get("phone")
+    user_id = data.get("user_id")
+    amount = data.get("amount")
+
+    result, status = trigger_mpesa_stk(phone, amount, user_id)
+    return jsonify(result), status

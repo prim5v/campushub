@@ -9,4 +9,5 @@ from .gemini_setup import GEMINI_API_KEY
 from .audit import log_audit
 from .plan_limits import plan_limit_required
 from .check_paid_signup import require_paid_signup
+from .paymentGateways import trigger_mpesa_stk
 # from .vision import is_blurry, extract_face_embedding, compare_faces
