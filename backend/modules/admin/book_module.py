@@ -48,9 +48,10 @@ def make_booking():
     phone = data.get("phone")
     amount = data.get("amount")
     user_id = data.get("user_id")
+    request_id = data.get("request_id")  # <-- Make sure frontend sends this
 
     # --- Validation ---
-    if not listing_id or not phone or not amount:
+    if not listing_id or not phone or not amount or not request_id:
         return jsonify({"error": "All fields are required"}), 400
 
     try:
@@ -70,6 +71,7 @@ def make_booking():
     cursor = conn.cursor()
 
     try:
+        # --- Insert into bookings ---
         cursor.execute("""
             INSERT INTO bookings 
             (booking_id, listing_id, user_id, phone_number, amount, payment_status, booking_status)
@@ -84,6 +86,13 @@ def make_booking():
             booking_status
         ))
 
+        # --- Update request status ---
+        cursor.execute("""
+            UPDATE requests
+            SET status = 'booked'
+            WHERE request_id = %s
+        """, (request_id,))
+
         conn.commit()
 
         return jsonify({
@@ -95,4 +104,5 @@ def make_booking():
 
     except Exception as e:
         conn.rollback()
+        logger.error(f"Booking creation failed: {e}")
         return jsonify({"error": "Failed to create booking"}), 500
