@@ -46,7 +46,7 @@ def trigger_mpesa_stk(phone, amount, user_id):
         )
 
         access_token = "Bearer " + auth_response.json().get("access_token")
-        callbackurl = "https://campushub4293.pythonanywhere.com/mpesaPaymentGetways/callback"
+        callbackurl = "https://campushub4293.pythonanywhere.com/mpesaPaymentGetways/mpesa_callback"
 
         # -------------------------
         # Generate Password
