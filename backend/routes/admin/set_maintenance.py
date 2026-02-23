@@ -23,14 +23,14 @@ import user_agents
 import hashlib
 
 
-from . import comrade
+from . import admin
 from ...utils.limiter import limiter
 from ...utils.db_connection import get_db
 from . import comrade
 
 
 
-@comrade.route("/set_system_maintenance", methods=["PUT", "POST"])
+admin.route("/set_system_maintenance", methods=["PUT", "POST"])
 @limiter.limit("10 per minute")
 def set_maintenance():
     """
