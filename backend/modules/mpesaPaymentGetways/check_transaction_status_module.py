@@ -58,6 +58,7 @@ def check_transaction_status(checkout_id):
             SELECT 
                 transaction_id,
                 status,
+                user_id,
                 amount,
                 mpesa_code,
                 transaction_date
@@ -94,7 +95,7 @@ def check_transaction_status(checkout_id):
                 WHERE user_id = %s AND payment_status = 'pending'
             """, (row["user_id"],))
             db.commit()
-            
+
             return jsonify({
                 "status": "success",
                 "message": "Payment successful",
