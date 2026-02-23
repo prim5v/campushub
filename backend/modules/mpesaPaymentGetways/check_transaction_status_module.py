@@ -87,9 +87,9 @@ def check_transaction_status(checkout_id):
         # ===============================
         # Completed
         # ===============================
-        if status == "completed":
+        if status == "success":
             return jsonify({
-                "status": "completed",
+                "status": "success",
                 "message": "Payment successful",
                 "transaction_id": row["transaction_id"],
                 "mpesa_receipt": row["mpesa_code"],
