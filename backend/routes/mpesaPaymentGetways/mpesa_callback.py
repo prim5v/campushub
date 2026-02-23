@@ -26,9 +26,9 @@ from . import mpesaPaymentGetways
 from ...utils.limiter import limiter
 from ...modules.mpesaPaymentGetways.mpesa_callback_module import handle_mpesa_transaction_callback
 
-@mpesaPaymentGetways.route("/callback", methods=['POST', 'GET'])
+@mpesaPaymentGetways.route("/mpesa_callback", methods=['POST', 'GET'])
 @limiter.limit("3 per minute")
-def callback():
+def mpesa_callback():
     data = request.get_json(silent=True) or {}
     response = handle_mpesa_transaction_callback(data)
     return response

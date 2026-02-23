@@ -69,7 +69,7 @@ from backend.routes.auth import auth_bp
 from backend.routes.admin import admin
 from backend.routes.landlord import landlord
 from backend.routes.comrade import comrade
-from backend .routes.mpesaPaymentGetways import mpesaPaymentGetways
+from backend.routes.mpesaPaymentGetways import mpesaPaymentGetways
 from backend.routes.AI import ai_bp
 
 app.register_blueprint(auth_bp)
