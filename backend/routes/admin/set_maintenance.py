@@ -26,7 +26,6 @@ import hashlib
 from . import admin
 from ...utils.limiter import limiter
 from ...utils.db_connection import get_db
-from . import comrade
 
 
 
