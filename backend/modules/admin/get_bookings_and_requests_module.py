@@ -106,9 +106,9 @@ def get_requests_and_bookings():
 
             LEFT JOIN users landlord 
                 ON p.user_id = landlord.user_id
-
+            
             LEFT JOIN Location_data loc 
-                ON l.listing_id = loc.listing_id
+                ON p.property_id = loc.property_id
 
             LEFT JOIN (
                 SELECT s1.*

@@ -10,7 +10,7 @@ from decimal import Decimal
 from .db_connection import get_db
 
 
-def trigger_mpesa_stk(phone: str, amount: int, user_id: str):
+def trigger_mpesa_stk(phone, amount, user_id):
     try:
         # -------------------------
         # Validation
