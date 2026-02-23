@@ -64,7 +64,7 @@ def trigger_mpesa_stk(phone, amount, user_id):
             "Password": encoded_password,
             "Timestamp": timestamp,
             "TransactionType": "CustomerPayBillOnline",
-            "Amount": float(amount),
+            "Amount": 1, #float(amount)
             "PartyA": phone,
             "PartyB": business_short_code,
             "PhoneNumber": phone,
