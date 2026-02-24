@@ -30,32 +30,68 @@ import bcrypt, uuid
 from datetime import datetime, timedelta
 from ...utils.extra_functions import (generate_otp, send_security_email, send_informational_email, get_device_info)
 
-
-def perform_login(data):
-    """Handle existing user login with session and trust checks"""
+def perform_admin_login(data):
+    #use email and provided otp
     email = data.get("email")
-    password = data.get("password")
+    otp = data.get("otp")
 
-
-    if not email or not password:
-        return jsonify({"error": "server error"}), 400
-
+    # validation
+    if not email or not otp:
+        return jsonify({"error": "required fields"}), 400
+    
     conn = get_db()
     cursor = conn.cursor()
 
+    # check if email exists in user table
     cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
     user = cursor.fetchone()
     if not user:
-        return jsonify({"error": "server error"}), 404
+        return jsonify({"error": "user not found"}), 404
+    
+    # check otp if it exists in admin
+    cursor.execute("""
+            SELECT * FROM email_otp
+            WHERE email = %s
+            ORDER BY created_at DESC
+            LIMIT 1
+        """, (email,))
+    record = cursor.fetchone()
 
-    if not bcrypt.checkpw(password.encode(), user["password_hash"].encode()):
-        return jsonify({"error": "server error"}), 401
+    if not record:
+        return jsonify({"error": "No OTP found for this email. Please request a new one."}), 404
+    
 
+    # Check if user exceeded attempts
+    if record["attempts"] >= 5:
+        return jsonify({"error": "Too many incorrect attempts. OTP locked. Request a new OTP."}), 403
+
+    # Check expiration
+    if datetime.utcnow() > record["expires_at"]:
+        return jsonify({"error": "OTP has expired"}), 400
+    
+    
+    # validate otp
+    if record["otp_code"] != otp:
+        # Increment attempt count
+        cursor.execute("""
+                    UPDATE email_otp SET attempts = attempts + 1
+                    WHERE email = %s
+                """, (email,))
+        conn.commit()
+
+        attempts_left = 5 -(record["attempts"] + 1)
+        return jsonify({
+                    "error": "Incorrect OTP",
+                    "attempts_left": max(attempts_left, 0)
+                }), 400
+    
+    # otp correct
     # Device and session handling
     device_id = request.cookies.get("device_id") or f"DEV-{uuid.uuid4().hex[:10].upper()}"
     session_id = str(uuid.uuid4())
-    token, expiry, token_hash = generate_jwt(user["user_id"], user["role"], device_id, session_id)
+    token, expiry, token_hash = generate_jwt(user["user_id"], record["role"], device_id, session_id)
 
+    # insert into sessions table
     device_info = get_device_info()
     cursor.execute("""
         INSERT INTO sessions (session_id, user_id, token_hash, expires_at, device_id, device_name, browser, os, ip_address, location_address)
@@ -66,6 +102,7 @@ def perform_login(data):
     ))
     conn.commit()
 
+    
     # Trust score evaluation
     cursor.execute("""
         SELECT device_id, COUNT(*) as usage_count
@@ -88,7 +125,7 @@ def perform_login(data):
 
     trust_score, reasons = 0, []
 
-    # IP Check
+     # IP Check
     if last_session and last_session["ip_address"] == device_info["ip"]:
         trust_score += 40
     else:
@@ -122,7 +159,7 @@ def perform_login(data):
     elif trust_score < 80:
         send_informational_email(user["email"], device_info, reasons)
 
-        # get user status
+    # get user status
     cursor.execute("SELECT status FROM security_checks WHERE user_id=%s", (user["user_id"],))
     status = cursor.fetchone()["status"]
     
@@ -137,8 +174,7 @@ def perform_login(data):
             "role": user["role"],
             "email": user["email"],
             "status": status,
-            "csrf_token": csrf_token,
-            "password_hash": user["password_hash"]
+            "csrf_token": csrf_token
         },
     }))
     resp.set_cookie("device_id", device_id, max_age=365*24*60*60, httponly=True, secure=True, samesite="None", path="/")
@@ -146,3 +182,7 @@ def perform_login(data):
     resp.set_cookie("csrf_token", csrf_token, httponly=False, secure=True, samesite="None", path="/")
 
     return resp
+
+
+
+
