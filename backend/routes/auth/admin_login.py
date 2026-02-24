@@ -31,7 +31,7 @@ from ...utils.limiter import limiter
 
 @auth_bp.route("/admin_login", methods=["POST"])
 @limiter.limit("4 per minute")  # still light protection
-def login():
+def admin_login():
     data = request.json or request.form
     response = perform_admin_login(data)  # call module function that handles DB + JWT
     return response

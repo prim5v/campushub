@@ -31,7 +31,7 @@ from ...utils.limiter import limiter
 
 @auth_bp.route("/admin_get_otp", methods=["POST"])
 @limiter.limit("4 per minute")  # still light protection
-def login():
+def admin_get_otp():
     data = request.json or request.form
     response = perform_get_otp(data)  # call module function that handles DB + JWT
     return response
