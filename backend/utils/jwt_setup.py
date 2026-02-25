@@ -115,15 +115,34 @@ def token_required(f):
                 token_device_id, device_id
             )
             return jsonify({"error": "Token not valid for this device"}), 401
+        
+        conn = get_db()
+        cursor = conn.cursor()
 
         # ---- Token hash (optional but logged) ----
         token_hash = hashlib.sha256(token.encode()).hexdigest()
         logger.info("Token hash: %s", token_hash)
+        # check if user account is deactivated or active
+        try:
+            cursor.execute("""
+                SELECT is_active From users 
+                WHERE user_id=%s
+                """, (current_user,))
+            user_row = cursor.fetchone()
+
+            if not user_row:
+                return jsonify({"error": "User not found"}), 401
+
+            if not user_row["is_active"]:
+                return jsonify({"error": "Account disabled"}), 401
+        except Exception as err:
+            logger.exception("AUTH FAIL: Database error during user account check")
+            return jsonify({"error": "Auth System failure"}), 500
 
         # ---- Session check ----
         try:
-            conn = get_db()
-            cursor = conn.cursor()
+            # conn = get_db()
+            # cursor = conn.cursor()
 
             logger.info("Querying session from DB...")
             cursor.execute(
