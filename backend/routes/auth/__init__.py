@@ -3,6 +3,6 @@ from flask import Blueprint
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 # Import the route modules so they are registered with the blueprint
-from . import signup, login, profile, verifyotp, admin_login, admin_get_otp
+from . import signup, login, profile, verifyotp, admin_login, admin_get_otp, check_token, forgot_password, reset_password
 
 

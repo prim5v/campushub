@@ -436,3 +436,19 @@ CREATE TABLE system_maintenance (
     message VARCHAR(255) DEFAULT 'The system is currently under maintenance. Please check back later.',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+
+-- Table: password_resets
+CREATE TABLE password_resets (
+    id SERIAL PRIMARY KEY,               -- Auto-incrementing ID
+    user_id VARCHAR(50) NOT NULL,                -- Reference to users table
+    token VARCHAR(255) NOT NULL UNIQUE,  -- Secure random token
+    expires_at TIMESTAMP NOT NULL,       -- Token expiration
+    used BOOLEAN DEFAULT FALSE,          -- Track if token has been used
+    created_at TIMESTAMP DEFAULT NOW(),  -- Record creation timestamp
+    updated_at TIMESTAMP DEFAULT NOW(),  -- Record last update
+    CONSTRAINT fk_user FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- Index to quickly lookup tokens
+CREATE INDEX idx_password_reset_token ON password_resets(token);

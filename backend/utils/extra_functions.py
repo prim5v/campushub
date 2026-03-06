@@ -167,6 +167,24 @@ def send_informational_email(email, device_info, reasons):
         print(f"❌ Failed to send email: {e}")
         return False
 
+def send_password_reset_email(email, RESET_LINK):
+    html = render_template(
+        "emails/forgot_password_email.html",
+        RESET_LINK = RESET_LINK
+    )
+    msg = Message(
+        subject="Password Reset email",
+        recipients=[email],
+        html=html 
+    )
+    try:
+        mail.send(msg)
+        print("✅Password reset email sent successfully")
+        return True
+    except Exception as e:
+        print(f"❌ Failed to send email: {e}")
+        return False
+
 
 def get_device_brand(ua_string: str) -> dict:
     ua = ua_string.lower()
