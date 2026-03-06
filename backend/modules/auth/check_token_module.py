@@ -22,21 +22,28 @@ from flask import make_response
 import user_agents
 import hashlib
 import secrets
-
+import logging
 
 from ...utils.db_connection import get_db
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("password_reset")
+
 
 def check_token():
     data = request.get_json() or request.form
     token = data.get("token")
 
+    logger.info(f"Received check token request. Token: {token}")
+
     if not token:
+        logger.warning("No token provided in request")
         return jsonify({"valid": False, "message": "No token provided"}), 400
 
     try:
         db = get_db()
         cursor = db.cursor()
-        # Check token in password_resets table and that it hasn't expired
         sql = """
             SELECT user_id, expires_at
             FROM password_resets
@@ -45,20 +52,23 @@ def check_token():
         """
         cursor.execute(sql, (token,))
         row = cursor.fetchone()
+        logger.info(f"Check token query result: {row}")
 
         if not row:
+            logger.warning("Token not found")
             return jsonify({"valid": False, "message": "Token not found"}), 404
 
         user_id, expires_at = row
         now = datetime.utcnow()
+        logger.info(f"Token belongs to user_id={user_id}, expires_at={expires_at}, current_time={now}")
 
         if expires_at < now:
+            logger.warning("Token expired")
             return jsonify({"valid": False, "message": "Token expired"}), 401
 
-        # Token is valid
+        logger.info("Token is valid")
         return jsonify({"valid": True, "user_id": user_id}), 200
 
     except Exception as e:
-        # Log to Sentry
-        # Sentry.captureException(e)
+        logger.error(f"Error checking token: {e}", exc_info=True)
         return jsonify({"valid": False, "message": "Server error"}), 500
