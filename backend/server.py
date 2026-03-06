@@ -16,7 +16,7 @@ from flask_mail import Mail, Message
 load_dotenv()
 
 # ================= FLASK APP SETUP =================
-app = Flask(__name__)
+app = Flask(__name__, template_folder="../templates")
 
 # === EMAIL CONFIG ===
 app.config["MAIL_SERVER"] = os.getenv("MAIL_SERVER")
