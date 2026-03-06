@@ -24,6 +24,8 @@ import hashlib
 import secrets
 import math
 
+from flask import render_template
+
 from .email_setup import mail
 
 def get_location(ip: str) -> str:
@@ -118,34 +120,18 @@ def get_device_info() -> dict:
 # from utils.email_utils import send_security_email
 
 def send_security_email(email, device_info, reasons):
-    subject = "⚠️ Security Alert: Unusual Login Detected"
 
-    reasons_text = "\n".join([f"• {reason}" for reason in reasons])
+    html = render_template(
+        "email/security_alert.html",
+        device=device_info,
+        reasons=reasons
+    )
 
-    message_body = f"""
-    🔐 **Security Alert**
-
-    A new login was detected on your account that appears unusual:
-
-    🔎 **Reason(s) for alert:**
-    {reasons_text}
-
-    📱 **Login Details:**
-    • Browser: {device_info['browser']}
-    • Operating System: {device_info['os']}
-    • Device: {device_info['device']}
-    • Device Brand: {device_info['device_brand']}
-    • Device Model: {device_info['device_model']}
-    • IP Address: {device_info['ip']}
-    • Location: {device_info['location']}
-
-    If this was NOT you, please secure your account immediately by changing your password or contacting support.
-
-    Stay safe,
-    Your Security Team
-    """
-
-    msg = Message(subject, recipients=[email], body=message_body)
+    msg = Message(
+        subject="⚠️ Security Alert: Unusual Login Detected",
+        recipients=[email],
+        html=html
+    )
 
     try:
         mail.send(msg)
@@ -161,36 +147,17 @@ def generate_otp():
     return str(random.randint(100000, 999999))
 
 def send_informational_email(email, device_info, reasons):
-    subject = "ℹ️ Login Notice: New Device or Browser Detected"
+    html = render_template(
+        "email/security_alert.html",
+        device=device_info,
+        reasons=reasons
+    )
 
-    reasons_text = "\n".join([f"• {reason}" for reason in reasons])
-
-    message_body = f"""
-    🔔 **Login Notice**
-
-    A new login was detected on your account. This login is slightly different from your usual activity,
-    but does not appear fully suspicious.
-
-    🔎 **Reason(s) for notification:**
-    {reasons_text}
-
-    📱 **Login Details:**
-    • Browser: {device_info['browser']}
-    • Operating System: {device_info['os']}
-    • Device: {device_info['device']}
-    • Device Brand: {device_info['device_brand']}
-    • Device Model: {device_info['device_model']}
-    • IP Address: {device_info['ip']}
-    • Location: {device_info['location']}
-
-    If this was you, no action is needed.
-    If not, please review your account activity.
-
-    Stay safe,
-    Your Security Team
-    """
-
-    msg = Message(subject, recipients=[email], body=message_body)
+    msg = Message(
+        subject="ℹ️ Login Notice: New Device or Browser Detected",
+        recipients=[email],
+        html=html
+    )
 
     try:
         mail.send(msg)

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family: Arial; background:#f4f6f8; padding:20px;">
+
+<table width="100%" style="max-width:600px;margin:auto;background:white;border-radius:8px;padding:30px;">
+
+<tr>
+<td align="center">
+<img src="https://campushub-website.vercel.app/favicon.png" width="120">
+</td>
+</tr>
+
+<tr>
+<td>
+
+<h2 style="color:#d93025;">⚠ Security Alert</h2>
+
+<p>A login to your account appears unusual.</p>
+
+<p><strong>Reasons:</strong></p>
+<ul>
+{% for reason in reasons %}
+<li>{{reason}}</li>
+{% endfor %}
+</ul>
+
+<h3>Login Details</h3>
+
+<table style="width:100%;border-collapse:collapse;">
+<tr><td><b>Browser</b></td><td>{{device.browser}}</td></tr>
+<tr><td><b>OS</b></td><td>{{device.os}}</td></tr>
+<tr><td><b>Device</b></td><td>{{device.device}}</td></tr>
+<tr><td><b>Brand</b></td><td>{{device.device_brand}}</td></tr>
+<tr><td><b>Model</b></td><td>{{device.device_model}}</td></tr>
+<tr><td><b>IP</b></td><td>{{device.ip}}</td></tr>
+<tr><td><b>Location</b></td><td>{{device.location}}</td></tr>
+</table>
+
+<p style="margin-top:20px;">
+If this was not you, change your password immediately or contact support.
+</p>
+
+</td>
+</tr>
+
+<tr>
+<td align="center" style="font-size:12px;color:#888;padding-top:20px;">
+Security Team • CompassHub
+</td>
+</tr>
+
+</table>
+
+</body>
+</html>
