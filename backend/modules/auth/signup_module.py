@@ -22,6 +22,7 @@ from flask import make_response
 import user_agents
 import hashlib
 import secrets
+from flask import render_template
 
 from ...utils.email_setup import mail   
 from ...utils.db_connection import get_db
@@ -120,14 +121,20 @@ def perform_signup(data):
         logger.info(f"📧 Sending OTP email to {email}")
         try:
             msg = Message("Verify Your Email", recipients=[email])
-            msg.body = f"""Hello {username},
+#             msg.body = f"""Hello {username},
 
-Your verification code is: {otp}
+# Your verification code is: {otp}
 
-This code expires in 5 minutes.
+# This code expires in 5 minutes.
 
-— CompassHub
-"""
+# — CompassHub
+# """
+            msg.html = render_template(
+    "emails/otp_verification.html",
+    username=username,
+    otp=otp
+)
+
             mail.send(msg)
             logger.info(f"✅ OTP email sent successfully to {email}")
 
