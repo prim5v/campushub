@@ -122,7 +122,7 @@ def get_device_info() -> dict:
 def send_security_email(email, device_info, reasons):
 
     html = render_template(
-        "email/security_alert.html",
+        "emails/security_alert.html",
         device=device_info,
         reasons=reasons
     )
@@ -148,7 +148,7 @@ def generate_otp():
 
 def send_informational_email(email, device_info, reasons):
     html = render_template(
-        "email/security_alert.html",
+        "emails/security_alert.html",
         device=device_info,
         reasons=reasons
     )
