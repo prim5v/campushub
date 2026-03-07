@@ -25,6 +25,7 @@ import secrets
 import logging
 
 from ...utils.db_connection import get_db
+from ...utils.extra_functions import to_datetime
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -61,7 +62,7 @@ def check_token():
         # Convert expires_at to datetime if it's a string
         if isinstance(expires_at, str):
             try:
-                expires_at = datetime.strptime(expires_at, "%Y-%m-%d %H:%M:%S")
+                expires_at = to_datetime(expires_at)
             except ValueError as e:
                 logger.error(f"Failed to parse expires_at: {expires_at} - {e}")
                 return jsonify({"valid": False, "message": "Invalid token expiry format"}), 500

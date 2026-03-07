@@ -24,6 +24,7 @@ import hashlib
 import secrets
 import math
 
+
 from flask import render_template
 
 from .email_setup import mail
@@ -264,3 +265,22 @@ def safe_iso(dt, fallback="Immediately"):
         except:
             return fallback
     return dt.isoformat()
+
+
+# Utility conversion function
+
+
+def to_datetime(value):
+    """Convert DB DATETIME or string to datetime.datetime."""
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str):
+        try:
+            return datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            try:
+                # fallback in case microseconds exist
+                return datetime.strptime(value, "%Y-%m-%d %H:%M:%S.%f")
+            except ValueError:
+                raise
+    raise TypeError(f"Cannot convert {value} to datetime")
