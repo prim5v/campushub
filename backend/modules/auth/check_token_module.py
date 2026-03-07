@@ -57,15 +57,11 @@ def check_token():
             return jsonify({"valid": False, "message": "Token not found"}), 404
 
         user_id, expires_at = row
-        logger.info(f"Check token query result: {row}")
+        logger.info(f"Check token query result: {row} (expires_at type: {type(expires_at)})")
 
-        # Convert expires_at to datetime if it's a string
-        if isinstance(expires_at, str):
-            try:
-                expires_at = to_datetime(expires_at)
-            except ValueError as e:
-                logger.error(f"Failed to parse expires_at: {expires_at} - {e}")
-                return jsonify({"valid": False, "message": "Invalid token expiry format"}), 500
+        if not isinstance(expires_at, datetime):
+            logger.error(f"Unexpected type for expires_at: {type(expires_at)}")
+            return jsonify({"valid": False, "message": "Invalid token expiry format"}), 500
 
         now = datetime.utcnow()
         logger.info(f"Token belongs to user_id={user_id}, expires_at={expires_at}, current_time={now}")
