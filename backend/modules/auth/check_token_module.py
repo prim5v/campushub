@@ -41,50 +41,44 @@ def check_token():
         return jsonify({"valid": False, "message": "No token provided"}), 400
 
     try:
-        db = get_db()
-        cursor = db.cursor()
+        conn = get_db()
 
-        sql = """
-            SELECT user_id, expires_at
-            FROM password_resets
-            WHERE token = %s
-            LIMIT 1
-        """
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT user_id, expires_at
+                FROM password_resets
+                WHERE token = %s
+                LIMIT 1
+            """, (token,))
 
-        cursor.execute(sql, (token,))
-        row = cursor.fetchone()
+            record = cursor.fetchone()
 
-        if not row:
-            logger.info(f"Token not found: {token}")
-            return jsonify({"valid": False, "message": "Token not found"}), 404
+            if not record:
+                logger.info(f"Token not found: {token}")
+                return jsonify({
+                    "valid": False,
+                    "message": "Token not found"
+                }), 404
 
-        user_id, expires_at = row
-        logger.info(f"Check token query result: {row}")
+            user_id = record["user_id"]
+            expires_at = record["expires_at"]
 
-        # 🔧 Always normalize datetime
-        try:
-            expires_at = to_datetime(expires_at)
-        except Exception as e:
-            logger.error(f"Failed converting expires_at: {expires_at} | error: {e}")
-            return jsonify({"valid": False, "message": "Invalid token expiry format"}), 500
+            logger.info(f"Token record: {record}")
 
-        now = datetime.utcnow()
+            # Same expiry pattern used in OTP verification
+            if datetime.utcnow() > expires_at:
+                logger.info(f"Token expired for user_id={user_id}")
+                return jsonify({
+                    "valid": False,
+                    "message": "Token expired"
+                }), 401
 
-        logger.info(
-            f"Token belongs to user_id={user_id}, expires_at={expires_at}, current_time={now}"
-        )
+            logger.info(f"Token valid for user_id={user_id}")
 
-        # Check expiry
-        if expires_at < now:
-            logger.info(f"Token expired for user_id={user_id}")
-            return jsonify({"valid": False, "message": "Token expired"}), 401
-
-        logger.info(f"Token valid for user_id={user_id}")
-
-        return jsonify({
-            "valid": True,
-            "user_id": user_id
-        }), 200
+            return jsonify({
+                "valid": True,
+                "user_id": user_id
+            }), 200
 
     except Exception as e:
         logger.exception(f"Error checking token: {e}")
