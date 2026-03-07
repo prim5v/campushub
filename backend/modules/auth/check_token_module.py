@@ -35,10 +35,8 @@ def check_token():
     data = request.get_json() or request.form
     token = data.get("token")
 
-    logger.info(f"Received check token request. Token: {token}")
-
     if not token:
-        logger.warning("No token provided in request")
+        logger.warning("Check token request with no token provided")
         return jsonify({"valid": False, "message": "No token provided"}), 400
 
     try:
@@ -52,23 +50,31 @@ def check_token():
         """
         cursor.execute(sql, (token,))
         row = cursor.fetchone()
-        logger.info(f"Check token query result: {row}")
 
         if not row:
-            logger.warning("Token not found")
+            logger.info(f"Token not found: {token}")
             return jsonify({"valid": False, "message": "Token not found"}), 404
 
         user_id, expires_at = row
+        logger.info(f"Check token query result: {row}")
+
+        # Convert expires_at to datetime if it's a string
+        if isinstance(expires_at, str):
+            try:
+                expires_at = datetime.strptime(expires_at, "%Y-%m-%d %H:%M:%S")
+            except ValueError as e:
+                logger.error(f"Failed to parse expires_at: {expires_at} - {e}")
+                return jsonify({"valid": False, "message": "Invalid token expiry format"}), 500
+
         now = datetime.utcnow()
         logger.info(f"Token belongs to user_id={user_id}, expires_at={expires_at}, current_time={now}")
 
         if expires_at < now:
-            logger.warning("Token expired")
+            logger.info(f"Token expired for user_id={user_id}")
             return jsonify({"valid": False, "message": "Token expired"}), 401
 
-        logger.info("Token is valid")
         return jsonify({"valid": True, "user_id": user_id}), 200
 
     except Exception as e:
-        logger.error(f"Error checking token: {e}", exc_info=True)
+        logger.exception(f"Error checking token: {e}")
         return jsonify({"valid": False, "message": "Server error"}), 500
