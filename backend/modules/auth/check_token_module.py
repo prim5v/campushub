@@ -43,12 +43,14 @@ def check_token():
     try:
         db = get_db()
         cursor = db.cursor()
+
         sql = """
             SELECT user_id, expires_at
             FROM password_resets
             WHERE token = %s
             LIMIT 1
         """
+
         cursor.execute(sql, (token,))
         row = cursor.fetchone()
 
@@ -57,21 +59,36 @@ def check_token():
             return jsonify({"valid": False, "message": "Token not found"}), 404
 
         user_id, expires_at = row
-        logger.info(f"Check token query result: {row} (expires_at type: {type(expires_at)})")
+        logger.info(f"Check token query result: {row}")
 
-        if not isinstance(expires_at, datetime):
-            logger.error(f"Unexpected type for expires_at: {type(expires_at)}")
+        # 🔧 Always normalize datetime
+        try:
+            expires_at = to_datetime(expires_at)
+        except Exception as e:
+            logger.error(f"Failed converting expires_at: {expires_at} | error: {e}")
             return jsonify({"valid": False, "message": "Invalid token expiry format"}), 500
 
         now = datetime.utcnow()
-        logger.info(f"Token belongs to user_id={user_id}, expires_at={expires_at}, current_time={now}")
 
+        logger.info(
+            f"Token belongs to user_id={user_id}, expires_at={expires_at}, current_time={now}"
+        )
+
+        # Check expiry
         if expires_at < now:
             logger.info(f"Token expired for user_id={user_id}")
             return jsonify({"valid": False, "message": "Token expired"}), 401
 
-        return jsonify({"valid": True, "user_id": user_id}), 200
+        logger.info(f"Token valid for user_id={user_id}")
+
+        return jsonify({
+            "valid": True,
+            "user_id": user_id
+        }), 200
 
     except Exception as e:
         logger.exception(f"Error checking token: {e}")
-        return jsonify({"valid": False, "message": "Server error"}), 500
+        return jsonify({
+            "valid": False,
+            "message": "Server error"
+        }), 500

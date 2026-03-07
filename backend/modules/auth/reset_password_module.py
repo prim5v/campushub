@@ -37,21 +37,24 @@ def toggle_reset_pwd():
     new_password = data.get("password")
 
     if not token or not new_password:
-        logger.warning(f"Password reset request missing token or password. Token: {token}, Password length: {len(new_password) if new_password else 0}")
+        logger.warning(
+            f"Password reset request missing token or password. "
+            f"Token: {token}, Password length: {len(new_password) if new_password else 0}"
+        )
         return jsonify({"success": False, "message": "Token and password required"}), 400
 
     try:
         db = get_db()
         cursor = db.cursor()
 
-        # 1️⃣ Verify token exists and is not expired
-        sql_token = """
+        # 1️⃣ Get token record
+        sql = """
             SELECT user_id, expires_at
             FROM password_resets
             WHERE token = %s
             LIMIT 1
         """
-        cursor.execute(sql_token, (token,))
+        cursor.execute(sql, (token,))
         row = cursor.fetchone()
 
         if not row:
@@ -59,36 +62,53 @@ def toggle_reset_pwd():
             return jsonify({"success": False, "message": "Invalid token"}), 404
 
         user_id, expires_at = row
-        logger.info(f"Token query result: {row} (expires_at type: {type(expires_at)})")
+        logger.info(f"Token query result: {row}")
 
-        if not isinstance(expires_at, datetime):
-            logger.error(f"Unexpected type for expires_at: {type(expires_at)}")
+        # 🔧 Always normalize datetime
+        try:
+            expires_at = to_datetime(expires_at)
+        except Exception as e:
+            logger.error(f"Failed converting expires_at: {expires_at} | error: {e}")
             return jsonify({"success": False, "message": "Invalid token expiry format"}), 500
 
         now = datetime.utcnow()
-        logger.info(f"Token belongs to user_id={user_id}, expires_at={expires_at}, current_time={now}")
 
+        logger.info(
+            f"Token belongs to user_id={user_id}, expires_at={expires_at}, current_time={now}"
+        )
+
+        # 2️⃣ Check expiry
         if expires_at < now:
             logger.info(f"Token expired for user_id={user_id}")
             return jsonify({"success": False, "message": "Token expired"}), 401
 
-        # 2️⃣ Hash new password
-        hashed_password = bcrypt.hashpw(new_password.encode("utf-8"), bcrypt.gensalt())
+        # 3️⃣ Hash password
+        hashed_password = bcrypt.hashpw(
+            new_password.encode("utf-8"),
+            bcrypt.gensalt()
+        )
 
-        # 3️⃣ Update password_hash in users table
+        # 4️⃣ Update password
         sql_update = "UPDATE users SET password_hash = %s WHERE user_id = %s"
         cursor.execute(sql_update, (hashed_password, user_id))
 
-        # 4️⃣ Delete token to prevent reuse
+        # 5️⃣ Delete used token
         sql_delete = "DELETE FROM password_resets WHERE token = %s"
         cursor.execute(sql_delete, (token,))
 
         db.commit()
-        logger.info(f"Password reset successfully for user_id={user_id}")
 
-        return jsonify({"success": True, "message": "Password reset successfully"}), 200
+        logger.info(f"Password reset successful for user_id={user_id}")
+
+        return jsonify({
+            "success": True,
+            "message": "Password reset successfully"
+        }), 200
 
     except Exception as e:
         db.rollback()
         logger.exception(f"Error during password reset: {e}")
-        return jsonify({"success": False, "message": "Server error"}), 500
+        return jsonify({
+            "success": False,
+            "message": "Server error"
+        }), 500
