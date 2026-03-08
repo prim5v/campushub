@@ -23,12 +23,13 @@ import user_agents
 import hashlib
 import secrets
 
-from ...utils.email_setup import mail   
+from ...utils.email_setup import mail
 from ...utils.db_connection import get_db
 from ...utils.jwt_setup import generate_jwt
 import bcrypt, uuid
 from datetime import datetime, timedelta
 from ...utils.extra_functions import (generate_otp, send_security_email, send_informational_email, get_device_info)
+import re
 
 
 def perform_login(data):
@@ -36,9 +37,23 @@ def perform_login(data):
     email = data.get("email")
     password = data.get("password")
 
+    if not isinstance(email, str) or not isinstance(password, str):
+        return jsonify({"error": "invalid input"}), 400
+
+    email = email.strip().lower()
+
+    if len(email) > 255 or len(password) > 128:
+        return jsonify({"error": "invalid input"}), 400
+
+
+
+    EMAIL_REGEX = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+
+    if not re.match(EMAIL_REGEX, email):
+        return jsonify({"error": "invalid input"}), 400
 
     if not email or not password:
-        return jsonify({"error": "server error"}), 400
+        return jsonify({"error": "Enter both email and password"}), 400
 
     conn = get_db()
     cursor = conn.cursor()
@@ -46,10 +61,10 @@ def perform_login(data):
     cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
     user = cursor.fetchone()
     if not user:
-        return jsonify({"error": "server error"}), 404
+        return jsonify({"error": "Invalid credentials"}), 404
 
     if not bcrypt.checkpw(password.encode(), user["password_hash"].encode()):
-        return jsonify({"error": "server error"}), 401
+        return jsonify({"error": "Invalid credentials"}), 401
 
     # Device and session handling
     device_id = request.cookies.get("device_id") or f"DEV-{uuid.uuid4().hex[:10].upper()}"
@@ -125,7 +140,7 @@ def perform_login(data):
         # get user status
     cursor.execute("SELECT status FROM security_checks WHERE user_id=%s", (user["user_id"],))
     status = cursor.fetchone()["status"]
-    
+
     csrf_token = secrets.token_hex(32)
 
     # Set cookies and return response
@@ -146,3 +161,5 @@ def perform_login(data):
     resp.set_cookie("csrf_token", csrf_token, httponly=False, secure=True, samesite="None", path="/")
 
     return resp
+
+# new code yeah

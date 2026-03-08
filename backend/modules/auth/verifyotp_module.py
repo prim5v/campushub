@@ -87,14 +87,15 @@ def perform_verify_otp(data):
             user_id = f"{prefix}-{str(uuid.uuid4())[:16].upper()}"
 
             cursor.execute("""
-                INSERT INTO users (user_id, username, email, password_hash, role)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO users (user_id, username, email, password_hash, role, institution)
+                VALUES (%s, %s, %s, %s, %s, %s)
             """, (
                 user_id,
                 record["username"],
                 record["email"],
                 record["password_hash"],
-                record["role"]
+                record["role"],
+                record["institution"]
             ))
             conn.commit()
 
@@ -224,4 +225,4 @@ def perform_verify_otp(data):
         return jsonify({"error": str(e)}), 500
 
 
-# new code
+# new code yeah

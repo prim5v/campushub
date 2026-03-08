@@ -24,7 +24,7 @@ import hashlib
 import secrets
 from flask import render_template
 
-from ...utils.email_setup import mail   
+from ...utils.email_setup import mail
 from ...utils.db_connection import get_db
 from ...utils.jwt_setup import generate_jwt
 import bcrypt, uuid
@@ -50,8 +50,11 @@ def perform_signup(data):
         password = data.get("password")
         username = data.get("username")
         role = data.get("role")
+        institution = data.get("institution")
+        acceptedTerms = data.get("acceptedTerms")
 
-        logger.info(f"📥 Payload received: email={email}, username={username}, role={role}")
+
+        logger.info(f"📥 Payload received: email={email}, username={username}, role={role}, institution={institution}")
 
         ALLOWED_ROLES = {"comrade", "landlord", "e_service"}
 
@@ -65,6 +68,12 @@ def perform_signup(data):
         if not email or not password or not username or not role:
             logger.warning("❌ Missing required fields in signup payload")
             return jsonify({"error": "missing required fields"}), 400
+
+        if role == "comrade" and not institution:
+            return jsonify({"error": "institution required"}), 400
+
+        if not acceptedTerms:
+            return jsonify({"error": "must accept terms and conditions"}), 400
 
         conn = get_db()
         cursor = conn.cursor()
@@ -110,9 +119,9 @@ def perform_signup(data):
         # ==============================
         logger.info(f"💾 Inserting new OTP record for {email}")
         cursor.execute("""
-            INSERT INTO email_otp (email, username, password_hash, role, otp_code, expires_at)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (email, username, password_hash, role, otp, expires_at))
+            INSERT INTO email_otp (email, username, password_hash, role, institution, otp_code, expires_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (email, username, password_hash, role, institution, otp, expires_at))
         conn.commit()
 
         # ==============================
@@ -156,3 +165,6 @@ def perform_signup(data):
     except Exception as e:
         logger.exception("🔥 CRITICAL ERROR during signup process")
         return jsonify({"error": "internal server error"}), 500
+
+
+# new code yeah
