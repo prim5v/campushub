@@ -46,7 +46,8 @@ CORS(
             "http://localhost:3000",
             "http://localhost:5173",
             "https://campushubadmin.vercel.app",
-            "https://campushub-website.vercel.app"
+            "https://campushub-website.vercel.app",
+            "https://campushub.yreen.co.ke"
         ]
     }}
 )

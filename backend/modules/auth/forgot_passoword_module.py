@@ -62,7 +62,7 @@ def toggle_forgot_pwd():
     # 5️⃣ Construct reset link
     # RESET_LINK = f"https://campushub-website.vercel.app/reset-password/{token}"
     # Updated for search params
-    RESET_LINK = f"https://campushub-website.vercel.app/reset-password?token={token}"
+    RESET_LINK = f"https://campushub.yreen.co.ke/reset-password?token={token}"
 
     # 6️⃣ Send email
     email_sent = send_password_reset_email(email, RESET_LINK)
