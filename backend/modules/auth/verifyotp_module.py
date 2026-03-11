@@ -30,6 +30,7 @@ import bcrypt, uuid
 from datetime import datetime, timedelta
 
 from ...utils.email_setup import mail
+from ...utils.extra_functions import send_welcome_email
 
 
 def generate_otp():
@@ -102,6 +103,9 @@ def perform_verify_otp(data):
             # Delete OTP record
             cursor.execute("""DELETE FROM email_otp WHERE email = %s""", (email,))
             conn.commit()
+
+            # send welcome message
+            send_welcome_email(email, record["username"])
 
                         # After user creation and OTP deletion
             # ======================== SEND ROLE-BASED QUESTIONNAIRE ========================

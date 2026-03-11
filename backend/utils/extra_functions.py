@@ -185,6 +185,26 @@ def send_password_reset_email(email, RESET_LINK):
     except Exception as e:
         print(f"❌ Failed to send email: {e}")
         return False
+    
+def send_welcome_email(email, username):
+    html = render_template(
+        "emails/welcome_account.html",
+        username=username
+    )
+
+    msg = Message(
+        subject="Thanks for joining CampassHub",
+        recipients=[email],
+        html=html
+    )
+
+    try:
+        mail.send(msg)
+        print("✅ Welcome email sent successfully")
+        return True
+    except Exception as e:
+        print(f"❌ Failed to send welcome email: {e}")
+        return False
 
 
 def get_device_brand(ua_string: str) -> dict:
