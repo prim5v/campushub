@@ -130,6 +130,21 @@ Create table if not exists listings_data (
     listed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+Create table if not exists room_requests (
+    id SERIAL PRIMARY KEY,
+    listing_id VARCHAR(50) UNIQUE NOT NULL,
+    user_id VARCHAR(50) REFERENCES users(user_id) ON DELETE CASCADE,
+    title VARCHAR(100) NOT NULL,
+    room_description TEXT NOT NULL,
+    room_size VARCHAR(50) NOT NULL,
+    max_occupants INT NULL,
+    room_type VARCHAR(100) NOT NULL,
+    price_range VARCHAR(100) NOT NULL,
+    deadline TIMESTAMP NOT NULL,
+    phone VARCHAR(100) NOT NULL,
+    requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
 
 
 Create table if not exists properties_data (

@@ -1,0 +1,44 @@
+# imports
+import bcrypt
+from flask import Blueprint, Flask, jsonify, g, request, current_app
+import pymysql
+import uuid, random, string, re
+from flask_cors import CORS
+import requests
+from functools import wraps
+import jwt
+from google import genai  # ✅ correct for google-genai>=1.0.0
+from datetime import datetime, date, timedelta
+from requests.auth import HTTPBasicAuth
+# from flask import current_app
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+import logging
+from flask_mail import Mail, Message
+from decimal import Decimal
+from twilio.rest import Client
+from google import genai  # ✅ correct for google-genai>=1.0.0
+from flask import make_response
+import user_agents
+import hashlib
+import secrets
+
+
+from ...utils.db_connection import get_db
+import math
+
+def get_amenities(current_user_id, role, *args, **kwargs):
+    db = get_db()
+    cursor = db.cursor()
+
+    try:
+        cursor.execute("SELECT * FROM amenities ORDER BY id ASC")
+        amenities = cursor.fetchall()  # List of all amenities with id, key, label
+        
+        return jsonify({
+            "amenities": amenities
+        }), 200
+
+    except Exception as e:
+        db.rollback()
+        return jsonify({"error": "Failed to get amenities"}), 500    
