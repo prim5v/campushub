@@ -34,6 +34,8 @@ logger = logging.getLogger("password_reset")
 
 def perform_manual_create_account():
     data = request.get_json() or request.form
+    logger.info(f"Received manual create account payload: {data}")
+
 
     email = data.get("email")
     phone_number = data.get("phone_number")
@@ -49,22 +51,40 @@ def perform_manual_create_account():
     try:
         db = get_db()
 
+        # with db.cursor() as cursor:
+        #     cursor.execute("""
+        #         UPDATE email_otp
+        #         SET consent_manual = %s,
+        #             consent_email_valid = %s,
+        #             phone_number = %s
+        #         WHERE email = %s
+        #     """, (consent_manual, consent_email_valid, phone_number, email))
+
         with db.cursor() as cursor:
-            cursor.execute("""
-                UPDATE email_otp
-                SET consent_manual = %s,
-                    consent_email_valid = %s,
-                    phone_number = %s
-                WHERE email = %s
-            """, (consent_manual, consent_email_valid, phone_number, email))
+                cursor.execute("SELECT email FROM email_otp WHERE email=%s AND consent_manual=0 AND consent_email_valid=0", (email,))
+                record = cursor.fetchone()
+
+                if not record:
+                    return jsonify({
+                        "success": False,
+                        "message": "No signup record found for this email"
+                    }), 404
+
+                cursor.execute("""
+                    UPDATE email_otp
+                    SET consent_manual=%s,
+                        consent_email_valid=%s,
+                        phone_number=%s
+                    WHERE email=%s
+                """, (consent_manual, consent_email_valid, phone_number, email))
 
         db.commit()
 
-        if cursor.rowcount == 0:
-            return jsonify({
-                "success": False,
-                "message": "No signup record found for this email"
-            }), 404
+        # if cursor.rowcount == 0:
+        #     return jsonify({
+        #         "success": False,
+        #         "message": "No signup record found for this email"
+        #     }), 404
 
         logger.info(f"Manual consent updated for {email}")
 
@@ -80,3 +100,5 @@ def perform_manual_create_account():
             "success": False,
             "message": "Server error"
         }), 500
+    
+    # new code
