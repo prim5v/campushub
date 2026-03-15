@@ -29,7 +29,7 @@ from ...utils.db_connection import get_db
 
 def make_room_request(current_user_id, role, *args, **kwargs):
     upload_folder = current_app.config["UPLOAD_FOLDER"]
-    data = request.get_json() or request.form
+    data = request.form or request.get_json(silent=True) or {}
 
     title = data.get("title")
     room_description = data.get("description")
@@ -62,15 +62,15 @@ def make_room_request(current_user_id, role, *args, **kwargs):
             amenities_keys = json.loads(amenities_raw)
         except Exception:
             return jsonify({"error": "Invalid amenities format"}), 400
-        
+
 
         # Validate required fields
     if not images:
         return jsonify({"error": "At least one listing image is required"}), 400
-    
+
     if not all([title, price_range, room_description, room_type, room_size, deadline, phone]):
         return jsonify({"error": "Missing required fields"}), 400
-    
+
     os.makedirs(upload_folder, exist_ok=True)
     listing_id = uuid.uuid4().hex[:12]
 
@@ -142,7 +142,7 @@ def make_room_request(current_user_id, role, *args, **kwargs):
         return jsonify({
             "message": "Request made succesfully"
         }), 201
-    
+
     except Exception as e:
         db.rollback()
         logging.error(f"Error adding listing: {str(e)}")
