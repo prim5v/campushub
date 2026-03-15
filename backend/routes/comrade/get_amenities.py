@@ -28,7 +28,7 @@ from ...utils.limiter import limiter
 from ...modules.comrade.get_amenities_module import get_amenities
 from ...utils.jwt_setup import require_role
 
-@comrade.route("/get_amenities", methods =['POST'])
+@comrade.route("/get_amenities", methods =['POST', 'GET'])
 @require_role("comrade")
 @limiter.limit("10 per minute")
 def amenities(current_user_id, role, *args, **kwargs):

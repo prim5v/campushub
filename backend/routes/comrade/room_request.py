@@ -28,7 +28,7 @@ from ...utils.limiter import limiter
 from ...modules.comrade.room_request_module import make_room_request
 from ...utils.jwt_setup import require_role
 
-@comrade.route("/room_request", methods =['POST'])
+@comrade.route("/room_request", methods =['POST', 'GET'])
 @require_role("comrade")
 @limiter.limit("10 per minute")
 def room_request(current_user_id, role, *args, **kwargs):
