@@ -467,3 +467,22 @@ CREATE TABLE password_resets (
 
 -- Index to quickly lookup tokens
 CREATE INDEX idx_password_reset_token ON password_resets(token);
+
+
+
+CREATE TABLE IF NOT EXISTS  page_time (
+    id SERIAL PRIMARY KEY,
+    page_id VARCHAR(100) NOT NULL,
+    page_name VARCHAR(100) NOT NULL,
+    user VARCHAR(100) NULL,
+    paged_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_page_time_paged_at ON page_time(paged_at);
+CREATE INDEX idx_page_time_user ON page_time(user);
+
+GROUP BY page_id
+ORDER BY paged_at DESC
+
+CREATE INDEX idx_page_time_page_id_time 
+ON page_time(page_id, paged_at);
