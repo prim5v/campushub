@@ -24,12 +24,13 @@ import hashlib
 import secrets
 
 
-from flask import jsonify
-from ...utils.db_connection import get_db
+
+from ...utils.limiter import limiter
 from ...modules.admin.get_page_time_list_module import get_page_time_list
 from . import admin
 
 @admin.route("/get_page_time_list")
+@limiter.limit("20 per minute")
 def page_time_list():
     response = get_page_time_list()
     return response
