@@ -70,7 +70,7 @@ def get_page_time_list():
 
             # determine online/offline
             status = "offline"
-            if paged_at and (now - paged_at).total_seconds() <= 300:
+            if paged_at and (now - paged_at).total_seconds() <= 120:
                 status = "online"
 
             entry = {

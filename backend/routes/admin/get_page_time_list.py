@@ -30,7 +30,7 @@ from ...modules.admin.get_page_time_list_module import get_page_time_list
 from . import admin
 
 @admin.route("/get_page_time_list")
-@limiter.limit("20 per minute")
+@limiter.limit("50 per minute")
 def page_time_list():
     response = get_page_time_list()
     return response
