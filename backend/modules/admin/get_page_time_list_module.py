@@ -34,25 +34,38 @@ def get_page_time_list():
 
         query = """
         SELECT 
-            pt.page_id,
-            pt.page_name,
-            pt.user,
-            pt.paged_at,
-            u.username,
-            u.email,
-            u.role
-        FROM page_time pt
-        LEFT JOIN users u ON pt.user = u.user_id
-        INNER JOIN (
+                pt.page_id,
+                pt.page_name,
+                pt.user,
+                pt.paged_at,
+                u.username,
+                u.email,
+                u.role
+            FROM page_time pt
+            LEFT JOIN users u ON pt.user = u.user_id
+            INNER JOIN (
+                SELECT user, MAX(paged_at) AS latest_time
+                FROM page_time
+                WHERE user IS NOT NULL
+                GROUP BY user
+            ) latest_member
+            ON pt.user = latest_member.user
+            AND pt.paged_at = latest_member.latest_time
+
+            UNION ALL
+
             SELECT 
-                COALESCE(user, page_id) AS session_key,
-                MAX(paged_at) AS latest_time
-            FROM page_time
-            GROUP BY session_key
-        ) latest
-        ON COALESCE(pt.user, pt.page_id) = latest.session_key
-        AND pt.paged_at = latest.latest_time
-        ORDER BY pt.paged_at DESC
+                pt.page_id,
+                pt.page_name,
+                pt.user,
+                pt.paged_at,
+                NULL AS username,
+                NULL AS email,
+                NULL AS role
+            FROM page_time pt
+            WHERE pt.user IS NULL
+
+            ORDER BY paged_at DESC
         """
 
         cursor.execute(query)
