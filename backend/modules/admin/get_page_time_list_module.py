@@ -44,11 +44,13 @@ def get_page_time_list():
         FROM page_time pt
         LEFT JOIN users u ON pt.user = u.user_id
         INNER JOIN (
-            SELECT page_id, MAX(paged_at) AS latest_time
+            SELECT 
+                COALESCE(user, page_id) AS session_key,
+                MAX(paged_at) AS latest_time
             FROM page_time
-            GROUP BY page_id
-        ) latest 
-        ON pt.page_id = latest.page_id 
+            GROUP BY session_key
+        ) latest
+        ON COALESCE(pt.user, pt.page_id) = latest.session_key
         AND pt.paged_at = latest.latest_time
         ORDER BY pt.paged_at DESC
         """
@@ -108,7 +110,7 @@ def get_page_time_list():
             else:
                 anonymous.append(entry)
 
-                if status == "online":
+                if status in ["online", "idle"]:
                     online_anonymous += 1
 
         response = {
