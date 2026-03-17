@@ -69,9 +69,17 @@ def get_page_time_list():
             paged_at = row["paged_at"]
 
             # determine online/offline
-            status = "offline"
-            if paged_at and (now - paged_at).total_seconds() <= 120:
+            # status = "offline"
+            # if paged_at and (now - paged_at).total_seconds() <= 120:
+            #     status = "online"
+            seconds = (now - paged_at).total_seconds()
+
+            if seconds <= 30:
                 status = "online"
+            elif seconds <= 90:
+                status = "idle"
+            else:
+                status = "offline"
 
             entry = {
                 "page_id": row["page_id"],
@@ -91,7 +99,9 @@ def get_page_time_list():
 
                 members.append(entry)
 
-                if status == "online":
+                # if status == "online":
+                #     online_members += 1
+                if status in ["online", "idle"]:
                     online_members += 1
 
             # ANONYMOUS

@@ -30,7 +30,7 @@ from ...utils.jwt_setup import require_role
 
 # no decotrator to allow global usage
 @comrade.route("/send_page_messenger", methods = ['POST', 'GET'])
-@limiter.limit("10 per minute")
+@limiter.limit("50 per minute")
 def page_messenger():
     response = send_page_messenger()
     return response
