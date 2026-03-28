@@ -24,9 +24,13 @@ import hashlib
 import secrets
 
 
-from ...utils.db_connection import get_db
+from . import admin  # your blueprint
+from ...utils.limiter import limiter
+from ...modules.admin.cli_module import create_cli
 
-def make_favourite(data):
-    # data -- listing_id
-    db = get_db()
-    cursor = db.cursor()
+@admin.route("/create_cli", methods=['POST', 'GET'])
+@limiter.limit("10 per minute")
+def build_cli():
+    data = request.get_json()
+    response = create_cli(data)
+    return response

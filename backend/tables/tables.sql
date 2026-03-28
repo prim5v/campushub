@@ -486,3 +486,8 @@ ORDER BY paged_at DESC
 
 CREATE INDEX idx_page_time_page_id_time 
 ON page_time(page_id, paged_at);
+
+CREATE TABLE IF NOT EXISTS favourites (
+    id SERIAL PRIMARY KEY,
+    listing_id VARCHAR(]]0) REFERENCES listings_data(listing_id) ON DELETE CASCADE,
+)
