@@ -42,14 +42,12 @@ def create_cli(data):
 
         cursor.execute(query)
 
-        # Determine query type
-        query_type = query.strip().split()[0].lower()
-
-        if query_type == "select":
+        # If the query returns data (SELECT, SHOW, DESCRIBE, etc.)
+        if cursor.description:
             result = cursor.fetchall()
             columns = [col[0] for col in cursor.description]
 
-            logger.info("✅ SELECT query executed")
+            logger.info("✅ Data query executed")
             return jsonify({
                 "type": "select",
                 "columns": columns,
@@ -57,26 +55,27 @@ def create_cli(data):
                 "data": result
             }), 200
 
-        elif query_type == "insert":
-            db.commit()
-            logger.info("✅ INSERT query executed")
+        # Otherwise it's an action query (INSERT, UPDATE, DELETE)
+        db.commit()
+
+        query_type = query.strip().split()[0].lower()
+
+        if query_type == "insert":
             return jsonify({
                 "type": "insert",
                 "insert_id": cursor.lastrowid
             }), 201
 
         elif query_type in ["update", "delete"]:
-            db.commit()
-            logger.info("✅ UPDATE/DELETE query executed")
             return jsonify({
                 "type": query_type,
                 "affected_rows": cursor.rowcount
             }), 200
 
         else:
-            db.commit()
             return jsonify({
                 "type": "other",
+                "affected_rows": cursor.rowcount,
                 "message": "Query executed successfully"
             }), 200
 
