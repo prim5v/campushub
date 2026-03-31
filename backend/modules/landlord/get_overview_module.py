@@ -34,23 +34,22 @@ def fetch_overview(current_user_id, role, *args, **kwargs):
         db = get_db()
         logging.info("[OVERVIEW] Database connection acquired")
 
-        # IMPORTANT: Use DictCursor
         cursor = db.cursor(pymysql.cursors.DictCursor)
         logging.info("[OVERVIEW] Cursor created (DictCursor)")
 
+        # --- Fetch overview stats ---
         overview_sql = """
-            SELECT 
+            SELECT
                 (SELECT COUNT(*) FROM tenants_data WHERE user_id = %s) AS total_tenants,
                 (SELECT COUNT(*) FROM properties_data WHERE user_id = %s) AS total_properties,
                 (SELECT COUNT(*) FROM listings_data WHERE user_id = %s) AS total_listings,
-                (SELECT COALESCE(SUM(amount), 0) 
-                 FROM transactions 
+                (SELECT COALESCE(SUM(amount), 0)
+                 FROM transactions
                  WHERE user_id = %s AND transaction_type = 'income') AS total_income,
-                (SELECT COALESCE(SUM(amount), 0) 
-                 FROM transactions 
+                (SELECT COALESCE(SUM(amount), 0)
+                 FROM transactions
                  WHERE user_id = %s AND transaction_type = 'expense') AS total_expenses
         """
-
         params = (
             current_user_id,
             current_user_id,
@@ -58,23 +57,15 @@ def fetch_overview(current_user_id, role, *args, **kwargs):
             current_user_id,
             current_user_id
         )
-
-        logging.info(f"[OVERVIEW] Executing SQL with params: {params}")
-
         cursor.execute(overview_sql, params)
-
         result = cursor.fetchone()
 
-        logging.info(f"[OVERVIEW] Raw SQL result: {result}")
-
         if not result:
-            logging.warning("[OVERVIEW] Query returned no results")
+            logging.warning("[OVERVIEW] Overview query returned no results")
             return jsonify({"error": "No data found"}), 404
 
-        # Safely convert Decimals / None
         total_income = float(result["total_income"] or 0)
         total_expenses = float(result["total_expenses"] or 0)
-
         total_amount = total_income - total_expenses
 
         overview_data = {
@@ -86,7 +77,25 @@ def fetch_overview(current_user_id, role, *args, **kwargs):
             "total_amount": total_amount
         }
 
-        logging.info(f"[OVERVIEW] Computed overview data: {overview_data}")
+        # --- Fetch latest announcement (<= 3 days old) ---
+        three_days_ago = datetime.utcnow() - timedelta(days=3)
+        announcement_sql = """
+            SELECT id, audience, title, message, sent_at
+            FROM announcements
+            WHERE sent_at >= %s AND (audience = "landlord" OR audience = "all")
+            ORDER BY sent_at DESC
+            LIMIT 1
+        """
+        cursor.execute(announcement_sql, (three_days_ago,))
+        latest_announcement = cursor.fetchone()
+
+        # Convert datetime to ISO format for JSON
+        if latest_announcement and latest_announcement.get("sent_at"):
+            latest_announcement["sent_at"] = latest_announcement["sent_at"].isoformat()
+
+        overview_data["latest_announcement"] = latest_announcement or None
+
+        logging.info(f"[OVERVIEW] Computed overview data with latest announcement: {overview_data}")
 
         return jsonify(overview_data), 200
 
