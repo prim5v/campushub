@@ -35,7 +35,7 @@ def fetch_recent_announcements():
         cursor.execute("""
             SELECT *
             FROM announcements
-            ORDER BY created_at DESC
+            ORDER BY sent_at DESC
             LIMIT 10
         """)
         announcements = cursor.fetchall()
