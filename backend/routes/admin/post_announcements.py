@@ -24,16 +24,13 @@ import hashlib
 import secrets
 
 
-from . import landlord  # your blueprint
+from . import admin  # your blueprint
 from ...utils.limiter import limiter
-from ...modules.landlord.post_profile_module import post_profile
-from ...utils.jwt_setup import token_required, require_role
+from ...modules.admin.post_announcements_module import post_announcement
 
-
-@landlord.route("/post_profile", methods=["POST", "PUT"])
-@require_role("landlord")
-@limiter.limit("3 per minute")  # moderate protection
-def profile(current_user_id, role, *args, **kwargs):
-    data= request.form
-    response = post_profile(current_user_id, role, data)  # call module function that handles DB
+@admin.route("/post_announcement", methods=['POST', 'GET'])
+@limiter.limit("10 per minute")
+def post_announcement_route():
+    data = request.get_json()
+    response = post_announcement(data)
     return response

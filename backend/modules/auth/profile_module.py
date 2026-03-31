@@ -38,7 +38,7 @@ def check_profile(current_user_id, role):
         with conn.cursor(pymysql.cursors.DictCursor) as cursor:
 
             query = """
-                SELECT 
+               SELECT
                     u.user_id,
                     u.username,
                     u.email,
@@ -54,10 +54,16 @@ def check_profile(current_user_id, role):
                     s.status AS verification_status,
                     s.reviewed_by,
                     s.review_notes,
-                    s.performed_at AS verification_date
+                    s.performed_at AS verification_date,
+
+                    i.image_url AS profile_picture
 
                 FROM users u
                 LEFT JOIN security_checks s ON u.user_id = s.user_id
+                LEFT JOIN images i
+                    ON u.user_id = i.user_id
+                    AND i.id = (SELECT MAX(id) FROM images WHERE user_id = u.user_id)
+
                 WHERE u.user_id = %s
                 LIMIT 1
             """
@@ -65,6 +71,7 @@ def check_profile(current_user_id, role):
             print(f"[DEBUG] Executing profile join query for user_id={current_user_id}")
             cursor.execute(query, (current_user_id,))
             user = cursor.fetchone()
+            base_url = request.host_url.rstrip("/")
 
             print(f"[DEBUG] Query result: {user}")
 
@@ -93,6 +100,7 @@ def check_profile(current_user_id, role):
                 "plan": user["plan"],
                 "is_active": bool(user["is_active"]),
                 "created_at": user["created_at"],
+                "profile_picture": f"{base_url}/static/images/{user['profile_picture']}",
 
                 "verification": {
                     "id_number": user["id_number"],

@@ -489,5 +489,13 @@ ON page_time(page_id, paged_at);
 
 CREATE TABLE IF NOT EXISTS favourites (
     id SERIAL PRIMARY KEY,
-    listing_id VARCHAR(]]0) REFERENCES listings_data(listing_id) ON DELETE CASCADE,
-)
+    listing_id VARCHAR(100) REFERENCES listings_data(listing_id) ON DELETE CASCADE
+);
+
+Create Table IF NOT EXISTS announcements (
+    id SERIAL PRIMARY KEY,
+    audience VARCHAR(50) NOT NULL,  
+    title VARCHAR(100) NOT NULL,
+    message TEXT NOT NULL,
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
