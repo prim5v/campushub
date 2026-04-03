@@ -26,14 +26,14 @@ import secrets
 
 from . import landlord  # your blueprint
 from ...utils.limiter import limiter
-from ...modules.landlord.get_overview_module import fetch_overview
+from ...modules.landlord.make_badge_request_module import make_badge_request
 from ...utils.jwt_setup import token_required, require_role
 
 
-@landlord.route("/get_overview", methods=["GET"])
-@token_required
+@landlord.route("/badge_request", methods=["POST", "PUT"])
 @require_role("landlord")
-@limiter.limit("14 per minute")  # moderate protection
-def get_overview(current_user_id, role, *args, **kwargs):
-    response = fetch_overview(current_user_id, role, *args, **kwargs)  # call module function that handles DB
+@limiter.limit("3 per minute")  # moderate protection
+def badge_request(current_user_id, role, *args, **kwargs):
+    data= request.form
+    response = make_badge_request(current_user_id, role, data)  # call module function that handles DB
     return response

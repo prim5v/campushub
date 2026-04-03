@@ -499,3 +499,14 @@ Create Table IF NOT EXISTS announcements (
     message TEXT NOT NULL,
     sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+Create Table IF NOT EXISTS badge_requests (
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR(50) REFERENCES users(user_id) ON DELETE CASCADE,
+    property_name VARCHAR(100) NOT NULL,
+    badge_type VARCHAR(50) NOT NULL,
+    status enum ('pending', 'awarded', 'revoked') NOT NULL DEFAULT 'pending',
+    reviewed_by VARCHAR(50),
+    review_notes TEXT,
+    requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
