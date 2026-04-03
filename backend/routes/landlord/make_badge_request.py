@@ -34,6 +34,6 @@ from ...utils.jwt_setup import token_required, require_role
 @require_role("landlord")
 @limiter.limit("3 per minute")  # moderate protection
 def badge_request(current_user_id, role, *args, **kwargs):
-    data= request.form
+    data= request.get_json()  # get JSON data from request
     response = make_badge_request(current_user_id, role, data)  # call module function that handles DB
     return response
