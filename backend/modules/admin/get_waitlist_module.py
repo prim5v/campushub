@@ -17,7 +17,6 @@ import logging
 from flask_mail import Mail, Message
 from decimal import Decimal
 from twilio.rest import Client
-from google import genai  # ✅ correct for google-genai>=1.0.0
 from flask import make_response
 import user_agents
 import hashlib
@@ -27,12 +26,12 @@ import secrets
 from ...utils.db_connection import get_db
 
 def fetch_waitlist():
-    db =get_db()
-    cursor = db.cursor()
+    db = get_db()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
 
     try:
         sql = """
-        SELECT * FROM waitlist ORDER BY DESC
+        SELECT * FROM waitlist ORDER BY created_at DESC
         """
         cursor.execute(sql)
         data = cursor.fetchall()
@@ -40,5 +39,6 @@ def fetch_waitlist():
         return jsonify({
             "data": data
         }), 200
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
