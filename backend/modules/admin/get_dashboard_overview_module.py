@@ -48,12 +48,16 @@ def fetch_overview():
         cursor.execute("SELECT COUNT(*) AS total FROM users")
         total_users = cursor.fetchone()["total"]
 
+        cursor.execute("SELECT COUNT(*) AS total FROM waitlist")
+        waitlist_count = cursor.fetchone()["total"]
+
         cursor.execute("""
             SELECT COUNT(*) AS total 
             FROM listings_data 
             WHERE availability_status = 'available'
         """)
         active_listings = cursor.fetchone()["total"]
+
 
         cursor.execute("SELECT COALESCE(SUM(amount),0) AS total FROM e_earnings")
         total_revenue = cursor.fetchone()["total"]
@@ -187,7 +191,8 @@ def fetch_overview():
                 "total_users": total_users,
                 "active_listings": active_listings,
                 "total_revenue": total_revenue,
-                "pending_verifications": pending_verifications
+                "pending_verifications": pending_verifications,
+                "waitlist_count": waitlist_count
             },
 
             "analytics_percent_change": {

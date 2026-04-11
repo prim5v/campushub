@@ -510,3 +510,14 @@ Create Table IF NOT EXISTS badge_requests (
     review_notes TEXT,
     requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS waitlist (
+    id SERIAL PRIMARY KEY,
+    full_name VARCHAR(100),
+    phone VARCHAR(100),
+    campus VARCHAR(100),
+    budget INT,
+    preferred_location VARCHAR(100),
+    preferred_move_in_date TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
