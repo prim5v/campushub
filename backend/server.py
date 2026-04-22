@@ -95,6 +95,15 @@ logging.info("Flask application started successfully.")
 def index():
     return "Am Backend and am up and running"
 
+
+# ================= HEALTH CHECK =================
+@app.route("/ping", methods=["GET"])
+def ping():
+    return jsonify({
+        "status": "ok",
+        "message": "Server is alive"
+    }), 200
+
 # https://campushub4293.pythonanywhere.com/test-email
 @app.route("/test-email")
 def test_email():

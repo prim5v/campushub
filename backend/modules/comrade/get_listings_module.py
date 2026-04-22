@@ -62,7 +62,14 @@ def fetch_listings(data):
             SELECT l.*, p.verified
             FROM listings_data l
             LEFT JOIN properties_data p ON l.property_id = p.property_id
-            WHERE l.availability_status = 'available'
+            ORDER BY
+                CASE
+                    WHEN l.availability_status = 'available' THEN 1
+                    WHEN l.availability_status = 'matched' THEN 2
+                    WHEN l.availability_status = 'booked' THEN 3
+                    WHEN l.availability_status = 'rented' THEN 4
+                    ELSE 5
+                END
         """
         cursor.execute(fetch_listings_sql)
         listings = cursor.fetchall()
