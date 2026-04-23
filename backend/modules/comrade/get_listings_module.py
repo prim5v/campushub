@@ -183,9 +183,10 @@ def fetch_listings(data):
         # listings.sort(key=lambda x: x["distance"] if x["distance"] is not None else 10**18)
         status_priority = {
             "available": 0,
-            "matched": 1,
-            "booked": 2,
-            "rented": 3
+            "upcoming": 1,
+            "matched": 2,
+            "booked": 3,
+            "rented": 4
         }
 
         listings.sort(
