@@ -180,7 +180,20 @@ def fetch_listings(data):
                 listing["distance"] = None
 
         # 7️⃣ Sort by distance (nearest first)
-        listings.sort(key=lambda x: x["distance"] if x["distance"] is not None else 10**18)
+        # listings.sort(key=lambda x: x["distance"] if x["distance"] is not None else 10**18)
+        status_priority = {
+            "available": 0,
+            "matched": 1,
+            "booked": 2,
+            "rented": 3
+        }
+
+        listings.sort(
+            key=lambda x: (
+                status_priority.get(x["availability_status"], 99),
+                x["distance"] if x["distance"] is not None else 10**18
+            )
+        )
 
         return jsonify({"listings": listings}), 200
 
