@@ -81,8 +81,8 @@ def fetch_add_listing(current_user_id, role, *args, **kwargs):
     images = request.files.getlist("product_images")
 
     # Validate required fields
-    if not images:
-        return jsonify({"error": "At least one listing image is required"}), 400
+    # if not images:
+    #     return jsonify({"error": "At least one listing image is required"}), 400
 
     if not all([listing_name, property_id, availability_status, price]):
         return jsonify({"error": "Missing required fields"}), 400
