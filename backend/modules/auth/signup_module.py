@@ -25,6 +25,8 @@ import secrets
 from flask import render_template
 
 from ...utils.email_setup import mail
+from ...utils.email_service import send_email
+
 from ...utils.db_connection import get_db
 from ...utils.jwt_setup import generate_jwt
 import bcrypt, uuid
@@ -129,22 +131,21 @@ def perform_signup(data):
         # ==============================
         logger.info(f"📧 Sending OTP email to {email}")
         try:
-            msg = Message("Verify Your Email", recipients=[email])
-#             msg.body = f"""Hello {username},
+#             msg = Message("Verify Your Email", recipients=[email])
+#             msg.html = render_template(
+#     "emails/otp_verification.html",
+#     username=username,
+#     otp=otp
+# )
 
-# Your verification code is: {otp}
-
-# This code expires in 5 minutes.
-
-# — CompassHub
-# """
-            msg.html = render_template(
-    "emails/otp_verification.html",
-    username=username,
-    otp=otp
-)
-
-            mail.send(msg)
+#             mail.send(msg)
+            send_email(
+                to=email,
+                subject="Verify Your Email Address",
+                template="emails/otp_verification.html",
+                username=username,
+                otp=otp
+            )
             logger.info(f"✅ OTP email sent successfully to {email}")
 
         except Exception as e:

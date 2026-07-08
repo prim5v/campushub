@@ -12,22 +12,23 @@ from .email_setup import mail
 
 from sib_api_v3_sdk import (ApiClient, Configuration, TransactionalEmailsApi, SendSmtpEmail, SendSmtpEmailTo)
 
-configurartion = Configuration()
-configurartion.api_key['api-key'] = os.getenv("BREVO_API_KEY")
+configuration = Configuration()
+configuration.api_key['api-key'] = os.getenv("BREVO_API_KEY")
 
-brevo_api = TransactionalEmailsApi(ApiClient(configurartion))
+brevo_api = TransactionalEmailsApi(ApiClient(configuration))
 
 def send_email(to, subject, template, **context):
 
     html = render_template(template, **context)
     if Email_PROVIDER == "gmail":
-        return send_email_gmail(to, subject, html)
+        return send_gmail_email(to, subject, html)
     elif Email_PROVIDER == "brevo":
-        return send_email_brevo(to, subject, html)
+        return send_brevo_email(to, subject, html)
     else:
         raise Exception(f"Email provider {Email_PROVIDER} is not supported.")
 
-def send_gmail_email(to, subject, html): msg =Message(subject=subject, recipients=[to])
+def send_gmail_email(to, subject, html):
+    msg =Message(subject=subject, recipients=[to])
     msg.html = html
     mail.send(msg)
     logger.info(f"Email sent to {to} via Gmail with subject: {subject}")
@@ -35,7 +36,7 @@ def send_gmail_email(to, subject, html): msg =Message(subject=subject, recipient
 
 def send_brevo_email(to, subject, html):
     email = SendSmtpEmail(
-         
+
          sender ={
              "name": os.getenv("BREVO_SENDER_NAME"),
              "email": os.getenv("BREVO_SENDER_EMAIL")
@@ -49,7 +50,8 @@ def send_brevo_email(to, subject, html):
          subject=subject,
          html_content=html
     )
-    brevo_api.send_transational_email(email)
+    # brevo_api.send_transational_email(email)
+    brevo_api.send_transac_email(email)
     logger.info(f"Email sent to {to} via Brevo with subject: {subject}")
     return True
 
