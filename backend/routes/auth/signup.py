@@ -26,12 +26,14 @@ import secrets
 
 from flask import request, jsonify
 from . import auth_bp  # your blueprint
-from ...modules.auth.signup_module import perform_signup  # import function from your module
+# from ...modules.auth.signup_module import perform_signup  # import function from your module
+from ...modules.auth.signupsubstitute_module import substitute_signup
 from ...utils.limiter import limiter
 
 @auth_bp.route("/signup", methods=["POST"])
 @limiter.limit("4 per minute")  # still light protection
 def signup():
     data = request.json or request.form
-    response = perform_signup(data)  # call module function that handles DB + JWT
+    # response = perform_signup(data)  # call module function that handles DB + JWT
+    response = substitute_signup(data)
     return response
